@@ -31,7 +31,7 @@ namespace csp
 
 		const std::vector<std::reference_wrapper<Variable<T>>>& unassignedVars = constraintProblem.getUnassignedVariables();
 		Variable<T>& selectedVar = unassignedVars[0];
-		for (const T value : selectedVar.getDomain())
+		for (T value : selectedVar.getDomain())
 		{
 			selectedVar.assign(value);
 			if (withHistory)
@@ -68,8 +68,7 @@ namespace csp
 		{
 			if (constraintProblem.isConsistentlyAssigned())
 			{
-				const Assignment<T>& sol = constraintProblem.getCurrentAssignment();
-				solutions.insert(sol);
+				solutions.emplace(constraintProblem.getCurrentAssignment());
 			}
 			return;
 		}

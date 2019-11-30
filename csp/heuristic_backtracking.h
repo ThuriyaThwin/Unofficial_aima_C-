@@ -54,7 +54,7 @@ namespace csp
 		Variable<T>& selectedVar = candidateVars.size() == 1 ? candidateVars[0].get() : secondarySelector(constraintProblem, candidateVars);
 
 		const std::vector<T>& sortedDomain = domainSorter ? domainSorter.value()(constraintProblem, selectedVar) : selectedVar.getDomain();
-		for (const T value : sortedDomain)
+		for (T value : sortedDomain)
 		{
 			selectedVar.assign(value);
 			if (withHistory)
@@ -112,8 +112,7 @@ namespace csp
 		{
 			if (constraintProblem.isConsistentlyAssigned())
 			{
-				const Assignment<T>& sol = constraintProblem.getCurrentAssignment();
-				solutions.insert(sol);
+				solutions.emplace(constraintProblem.getCurrentAssignment());
 			}
 			return;
 		}
@@ -122,7 +121,7 @@ namespace csp
 		Variable<T>& selectedVar = candidateVars.size() == 1 ? candidateVars[0].get() : secondarySelector(constraintProblem, candidateVars);
 
 		const std::vector<T>& sortedDomain = domainSorter ? domainSorter.value()(constraintProblem, selectedVar) : selectedVar.getDomain();
-		for (const T value : sortedDomain)
+		for (T value : sortedDomain)
 		{
 			selectedVar.assign(value);
 

@@ -45,6 +45,12 @@
     <ClCompile Include="ac3_tests.cpp">
       <Filter>Source Files\cspPreprocessingTests</Filter>
     </ClCompile>
+    <ClCompile Include="ac4_tests.cpp">
+      <Filter>Source Files\cspPreprocessingTests</Filter>
+    </ClCompile>
+    <ClCompile Include="pc2_tests.cpp">
+      <Filter>Source Files\cspPreprocessingTests</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h">

@@ -61,6 +61,16 @@ namespace cspTests
 			Assert::IsFalse(var1 == var2);
 		}
 
+		TEST_METHOD(TestRemoveFromDomainByIdx)
+		{
+			csp::Variable<double> var2{ usetOriginalDomain };
+			const std::vector<double>& domain = var2.getDomain();
+			size_t idxOfValToDelete = 3;
+			double valToDelete = domain[idxOfValToDelete];
+			var2.removeFromDomain(idxOfValToDelete);
+			Assert::IsTrue(std::find(domain.cbegin(), domain.cend(), valToDelete) == domain.cend());
+		}
+
 		TEST_METHOD(TestUnassignedValueExtractionError)
 		{
 			Assert::ExpectException<csp::unassigned_value_extraction_error<double>>([&]() -> void { var1.getValue(); });

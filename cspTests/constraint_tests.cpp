@@ -24,6 +24,18 @@ bool doubleAllEqual(const std::vector<double>& values)
 	return true;
 }
 
+bool lessThanFive(const std::vector<double>& myValues)
+{
+	for (double myVal : myValues)
+	{
+		if (5 < myVal)
+		{
+			return false;
+		}
+	}
+	return true;
+}
+
 
 namespace cspTests
 {
@@ -32,6 +44,7 @@ namespace cspTests
 	public:
 		std::unordered_set<double> domain1{ 1.0, 2.5, 3.7, 4.2, 5.5, 6.6, 7.8, 8.8, 9.9, 10 };
 		csp::Variable<double> var1{ domain1 };
+		csp::Variable<double> var17{ var1 };
 
 		std::unordered_set<double> domain2{ 1.0, 2.5, 3.7, 4.2, 5.5, 6.6 };
 		csp::Variable<double> var2{ domain2 };
@@ -40,10 +53,15 @@ namespace cspTests
 		csp::Variable<double> var3{ domain3 };
 
 		std::vector<std::reference_wrapper<csp::Variable<double>>> vars{ var1, var2, var3 };
+		std::vector<std::reference_wrapper<csp::Variable<double>>> vars7{ var17 };
 
 		csp::Constraint<double> constraint1{ vars, [](const std::vector<double>& values) -> bool {return true; } };
 
 		csp::Constraint<double> constraint2{ vars, doubleAllEqual };
+
+		
+		csp::Constraint<double> constraint7{ vars7, lessThanFive };
+		
 
 
 		TEST_METHOD_INITIALIZE(ConstraintSetUp)
@@ -103,6 +121,16 @@ namespace cspTests
 			Assert::IsTrue(constraint1.isSatisfied());
 		}
 
+		/*
+		TEST_METHOD(TestEnforceUnaryConstraint)
+		{
+			std::unordered_set<double> expectedDomain{ 1.0, 2.5, 3.7, 4.2 };
+			csp::Variable<double>& var = constraint7.getVariables().front();
+			std::unordered_set<double> actualDomain(var.getDomain().cbegin(), var.getDomain().cend());
+			Assert::IsTrue(actualDomain ==  expectedDomain);
+		}
+		*/
+		
 		TEST_METHOD(TestgetConsistentDomainValues)
 		{
 			var1.assign(3.7);

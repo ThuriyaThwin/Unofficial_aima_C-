@@ -18,7 +18,7 @@ namespace csp
 		std::multimap<int, T> scoreToValueMap;
 		const std::vector<std::reference_wrapper<Variable<T>>>& unassignedNeighbors = constraintProb.getUnassignedNeighbors(var);
 		const std::vector<T>& consistentDomain = constraintProb.getConsistentDomain(var);
-		for (const T value : consistentDomain)
+		for (T value : consistentDomain)
 		{
 			var.assign(value);
 			int neighborDomainLengthsSum = 0;

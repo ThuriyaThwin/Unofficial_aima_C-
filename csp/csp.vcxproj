@@ -156,6 +156,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="arc_consistency_3.h" />
+    <ClInclude Include="arc_consistency_4.h" />
     <ClInclude Include="backtracking.h" />
     <ClInclude Include="constraint.h" />
     <ClInclude Include="constraint_evaluators.h" />
@@ -164,6 +165,9 @@
     <ClInclude Include="forward_checking.h" />
     <ClInclude Include="framework.h" />
     <ClInclude Include="heuristic_backtracking.h" />
+    <ClInclude Include="maintaining arc consistency.h" />
+    <ClInclude Include="min_conflicts.h" />
+    <ClInclude Include="path_consistency_2.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="unassigned_variable_selectors.h" />
     <ClInclude Include="variable.h" />

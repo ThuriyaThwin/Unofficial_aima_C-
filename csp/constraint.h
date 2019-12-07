@@ -14,19 +14,13 @@ namespace csp
 	class Constraint final
 	{
 	private:
-		using variables_refs_vector = std::vector<std::reference_wrapper<Variable<T>>>;
-		using ConstraintEvaluator = std::function<bool(const std::vector<T> & assignedValues)>;
-
-		static const variables_refs_vector initVariables(const variables_refs_vector& variables) noexcept
-		{
-			variables_refs_vector vars{ variables };
-			vars.shrink_to_fit();
-			return vars;
-		}
+		using VariableRefsVector = std::vector<std::reference_wrapper<Variable<T>>>;
+		using ConstraintEvaluator = std::function<bool(const std::vector<T>& assignedValues)>;
 
 		static const std::unordered_set<Variable<T>*> initVariableAddresses(const std::vector<std::reference_wrapper<Variable<T>>>& variables)
 		{
 			std::unordered_set<Variable<T>*> varsAddresses;
+			varsAddresses.reserve(variables.size());
 			for (Variable<T>& var : variables)
 			{
 				if (varsAddresses.count(&var) == 1)
@@ -39,42 +33,44 @@ namespace csp
 		}
 
 		const std::unordered_set<Variable<T>*> m_usetVariableAddresses;
-		const variables_refs_vector m_vecVariables;
+		const VariableRefsVector m_vecVariables;
 		const ConstraintEvaluator m_ceEvaluateConstraint;
 
+		void enforceUnaryConstraint()
+		{
+			Variable<T>& var = m_vecVariables.front();
+			const std::vector<T>& vecConsistentDomain = this->getConsistentDomainValues(var);
+			var.setSubsetDomain(vecConsistentDomain);
+		}
 
 		void verifyVariableIsContained(Variable<T>& var) const
 		{
-			if (m_usetVariableAddresses.count(&(var)) == 0)
+			if (!m_usetVariableAddresses.count(&(var)))
 			{
 				throw uncontained_variable_error<T>(*this, var);
 			}
 		}
 
-		std::optional<T> getVariableValue(Variable<T>& var) const
+		std::optional<T> getVariableOptValue(Variable<T>& var) const
 		{
+			std::optional<T> optValue;
 			if (var.isAssigned())
 			{
-				return var.getValue();
+				optValue = var.getValue();
 			}
-			else
-			{
-				return {};
-			}
+			return optValue;
 		}
 
 
 	public:
 		Constraint() = delete;
-		Constraint(const variables_refs_vector& variables, const ConstraintEvaluator& evaluateConstraint) :
-			m_vecVariables{ initVariables(variables) }, m_ceEvaluateConstraint{ evaluateConstraint },
-			m_usetVariableAddresses{ initVariableAddresses(variables) }
+		Constraint(const VariableRefsVector& variables, const ConstraintEvaluator& evaluateConstraint) :
+			m_vecVariables{ variables }, m_ceEvaluateConstraint{ evaluateConstraint },
+			m_usetVariableAddresses{ initVariableAddresses(variables) } 
 		{
 			if (m_vecVariables.size() == 1)
 			{
-				Variable<T>& var = m_vecVariables[0];
-				const std::vector<T>& consistentDomain = this->getConsistentDomainValues(var);
-				var.setDomain(consistentDomain);
+				enforceUnaryConstraint();
 			}
 		}
 
@@ -84,7 +80,7 @@ namespace csp
 		Constraint& operator=(const Constraint&) = default;
 		~Constraint() = default;
 
-		const variables_refs_vector& getVariables() const noexcept { return m_vecVariables; }
+		const VariableRefsVector& getVariables() const noexcept { return m_vecVariables; }
 
 		constexpr bool isCompletelyAssigned() const noexcept
 		{
@@ -101,6 +97,7 @@ namespace csp
 		constexpr bool isConsistent() const noexcept
 		{
 			std::vector<T> values;
+			values.reserve(m_vecVariables.size());
 			for (const Variable<T>& var : m_vecVariables)
 			{
 				if (var.isAssigned())
@@ -114,6 +111,7 @@ namespace csp
 		constexpr bool isSatisfied() const noexcept
 		{
 			std::vector<T> values;
+			values.reserve(m_vecVariables.size());
 			for (const Variable<T>& var : m_vecVariables)
 			{
 				if (var.isAssigned())
@@ -131,14 +129,16 @@ namespace csp
 		const std::vector<T> getConsistentDomainValues(Variable<T>& var) const
 		{
 			this->verifyVariableIsContained(var);
-			std::optional<T> optValue = this->getVariableValue(var);
+			std::optional<T> optValue = this->getVariableOptValue(var);
 			if (optValue)
 			{
 				var.unassign();
 			}
 
 			std::vector<T> consistentDomain;
-			for (const T& value : var.getDomain())
+			const std::vector<T>& domain = var.getDomain();
+			consistentDomain.reserve(domain.size());
+			for (T value : domain)
 			{
 				var.assign(value);
 				if (this->isConsistent())

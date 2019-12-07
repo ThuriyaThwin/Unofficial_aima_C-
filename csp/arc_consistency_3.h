@@ -29,24 +29,14 @@ namespace std
 namespace csp
 {
 	template <typename T>
-	bool ac3(ConstraintProblem<T>& constraintProblem)
+	bool ac3(ConstraintProblem<T>& constraintProblem, std::unordered_set<VariableRefsPair<T>>& arcs)
 	{
-		std::unordered_set<VariableRefsPair<T>> arcs;
-		for (Variable<T>& unassignedVar : constraintProblem.getUnassignedVariables())
-		{
-			for (Variable<T>& unassignedNeighbor : constraintProblem.getNeighbors(unassignedVar))
-			{
-				arcs.emplace(unassignedVar, unassignedNeighbor);
-			}
-		}
-
-
 		while (!arcs.empty())
 		{
 			const auto& itToStart = arcs.cbegin();
 			auto [unassignedVar, unassignedNeighbor] = *itToStart;
 			arcs.erase(itToStart);
-			if (__revise(constraintProblem, unassignedVar.get(), unassignedNeighbor.get()))
+			if (__revise<T>(constraintProblem, unassignedVar.get(), unassignedNeighbor.get()))
 			{
 				if (constraintProblem.getConsistentDomain(unassignedVar).empty())
 				{
@@ -55,7 +45,7 @@ namespace csp
 
 				std::vector<std::reference_wrapper<Variable<T>>>& neighbors =
 					const_cast<std::vector<std::reference_wrapper<Variable<T>>>&>(constraintProblem.getNeighbors(unassignedVar));
-				eraseUnassignedNeighborFromNeighbors(neighbors, unassignedNeighbor.get());
+				__eraseUnassignedNeighborFromNeighbors<T>(neighbors, unassignedNeighbor.get());
 
 				if (!neighbors.empty())
 				{
@@ -67,25 +57,34 @@ namespace csp
 			}
 		}
 
-		for (Variable<T>& var : constraintProblem.getVariables())
-		{
-			if (var.getDomain().empty() || constraintProblem.getConsistentDomain(var).empty())
-			{
-				return false;
-			}
-		}
-		return true;
+		return constraintProblem.isPotentiallySolvable();
 	}
 
 	template <typename T>
-	static void eraseUnassignedNeighborFromNeighbors(std::vector<std::reference_wrapper<Variable<T>>>& neighbors, Variable<T>& unassignedNeighbor)
+	std::unordered_set<VariableRefsPair<T>> initArcsAC3(ConstraintProblem<T>& constraintProblem)
+	{
+		std::unordered_set<VariableRefsPair<T>> arcs;
+		const std::vector<std::reference_wrapper<Variable<T>>>& unassignedVars = constraintProblem.getUnassignedVariables();
+		arcs.reserve(unassignedVars.size());
+		for (Variable<T>& unassignedVar : unassignedVars)
+		{
+			for (Variable<T>& unassignedNeighbor : constraintProblem.getNeighbors(unassignedVar))
+			{
+				arcs.emplace(unassignedVar, unassignedNeighbor);
+			}
+		}
+		return arcs;
+	}
+
+	template <typename T>
+	static void __eraseUnassignedNeighborFromNeighbors(std::vector<std::reference_wrapper<Variable<T>>>& neighbors, Variable<T>& unassignedNeighbor)
 	{
 		for (auto it = neighbors.cbegin(); it != neighbors.cend(); ++it)
 		{
 			if ((*it).get() == unassignedNeighbor)
 			{
 				neighbors.erase(it);
-				break;
+				return;
 			}
 		}
 	}

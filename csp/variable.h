@@ -31,11 +31,10 @@ namespace csp
 	class Variable final
 	{
 	private:
-		static const std::vector<T> initDomain(const std::unordered_set<T> & domain) noexcept
+		static const std::vector<T> initDomain(const std::unordered_set<T>& domain) noexcept
 		{
 			static_assert(is_to_stream_writable<std::ostream, T>::value);
 			std::vector<T> vecDomain(domain.cbegin(), domain.cend());
-			vecDomain.shrink_to_fit();
 			return vecDomain;
 		}
 
@@ -43,20 +42,44 @@ namespace csp
 		std::vector<T> m_vecDomain;
 		typename std::vector<T>::const_iterator m_itValue;
 		typename std::vector<T>::const_iterator m_itEnd;
-		/* if you don't plan on using preprocessing algorithms, an optimazation might be achieved by casting m_vecDomain and m_itEnd as
-		const variables, and deleting the methods removeFromDomain. */
+
 
 	public:
-		Variable() = delete;
-		Variable(const std::unordered_set<T> & domain) :
+		Variable<T>() = delete;
+		Variable<T>(const std::unordered_set<T>& domain) :
 			m_vecDomain{ initDomain(domain) }, m_itValue{ m_vecDomain.cend() }, m_itEnd{ m_vecDomain.cend() } { }
+		~Variable<T>() = default;
 
-		Variable(Variable&&) = default;
-		Variable& operator=(Variable&&) = default;
-		Variable(const Variable&) = default;
-		Variable& operator=(const Variable&) = default;
-		~Variable() = default;
+		Variable<T>(const Variable<T>& otherVal) : m_vecDomain{ otherVal.m_vecDomain }, m_itEnd{ m_vecDomain.cend() }
+		{
+			if (otherVal.m_itValue == otherVal.m_itEnd)
+			{
+				m_itValue = m_itEnd;
+			}
+			else
+			{
+				m_itValue = std::find(m_vecDomain.cbegin(), m_vecDomain.cend(), *(otherVal.m_itValue));
+			}
+		}
 
+		friend void swap(const Variable<T>& first, const Variable<T>& second)
+		{
+			std::swap(first.m_vecDomain, second.m_vecDomain);
+			std::swap(first.m_itValue, second.m_itValue);
+			std::swap(first.m_itEnd, second.m_itEnd);
+		}
+		
+		Variable<T>(Variable<T>&& otherVal) noexcept
+		{
+			swap(*this, otherVal);
+		}
+		
+		// copy and swap idiom
+		Variable<T>& operator=(Variable<T> otherVal) noexcept
+		{
+			swap(*this, otherVal);
+			return *this;
+		}
 
 		constexpr bool isAssigned() const noexcept { return m_itValue != m_itEnd; }
 
@@ -71,7 +94,7 @@ namespace csp
 
 		void unassign() noexcept { m_itValue = m_itEnd; }
 
-		void assign(const T & value)
+		void assign(const T& value)
 		{
 			if (this->isAssigned())
 			{
@@ -91,19 +114,6 @@ namespace csp
 			return m_vecDomain;
 		}
 
-		// TODO: write unit test
-		void setDomain(const std::vector<T> & domainToBeSet)
-		{
-			if (this->isAssigned())
-			{
-				throw domain_alteration_error<T>(*this);
-			}
-			m_vecDomain = domainToBeSet;
-			m_itEnd = m_vecDomain.cend();
-			m_itValue = m_itEnd;
-		}
-
-		// TODO: write unit test
 		void removeFromDomain(size_t idx)
 		{
 			if (this->isAssigned())
@@ -115,19 +125,29 @@ namespace csp
 			m_itValue = m_itEnd;
 		}
 
-		// TODO: write unit test
-		void removeFromDomain(const typename std::vector<T>::const_iterator & it)
+		bool setSubsetDomain(const std::vector<T>& vecSubsetDomain)
 		{
 			if (this->isAssigned())
 			{
 				throw domain_alteration_error<T>(*this);
 			}
-			m_vecDomain.erase(it);
+
+			std::unordered_set<T> usetDomain(m_vecDomain.cbegin(), m_vecDomain.cend());
+			for (T value : vecSubsetDomain)
+			{
+				if (!usetDomain.count(value))
+				{
+					return false;
+				}
+			}
+
+			m_vecDomain = vecSubsetDomain;
 			m_itEnd = m_vecDomain.cend();
 			m_itValue = m_itEnd;
+			return true;
 		}
 
-		friend std::ostream& operator<<(std::ostream & os, const Variable<T> & variable) noexcept
+		friend std::ostream& operator<<(std::ostream& os, const Variable<T>& variable) noexcept
 		{
 			os << "(variable's value: ";
 			if (variable.isAssigned())
@@ -141,7 +161,7 @@ namespace csp
 
 			os << ", variable's domain: ";
 			std::string sep = "";
-			for (const T& elem : variable.m_vecDomain)
+			for (T elem : variable.m_vecDomain)
 			{
 				os << sep << elem;
 				if (sep.empty())
@@ -160,22 +180,23 @@ namespace csp
 			return outStringStream.str();
 		}
 
-		friend bool operator==(const Variable<T> & left, const Variable<T> & right)
+		friend bool operator==(const Variable<T>& left, const Variable<T>& right)
 		{
 			return &(left) == &(right);
 		}
 
-		static void constructFromNamesToEqualDomain(std::unordered_map<std::string, Variable<T>> & NameToVarUMap,
-			const std::unordered_set<std::string> & names, const std::unordered_set<T> & domain)
+		static void constructFromNamesToEqualDomain(std::unordered_map<std::string, Variable<T>>& NameToVarUMap,
+			const std::unordered_set<std::string>& names, const std::unordered_set<T>& domain)
 		{
+			NameToVarUMap.reserve(names.size());
 			for (const std::string& varName : names)
 			{
 				NameToVarUMap.emplace(varName, domain);
 			}
 		}
 
-		static std::unordered_map<std::string, Variable<T>> constructFromNamesToEqualDomain(const std::unordered_set<std::string> & names,
-			const std::unordered_set<T> & domain)
+		static std::unordered_map<std::string, Variable<T>> constructFromNamesToEqualDomain(const std::unordered_set<std::string>& names,
+			const std::unordered_set<T>& domain)
 		{
 			std::unordered_map<std::string, Variable<T>> NameToVarUMap;
 			Variable<T>::constructFromNamesToEqualDomain(NameToVarUMap, names, domain);

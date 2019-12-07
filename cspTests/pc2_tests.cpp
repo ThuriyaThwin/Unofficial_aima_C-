@@ -1,10 +1,8 @@
 #include "pch.h"
 #include "CppUnitTest.h"
-#include "heuristic_backtracking.h"
+#include "path_consistency_2.h"
 #include "constraint_evaluators.h"
-#include "domain_sorters.h"
-#include "unassigned_variable_selectors.h"
-#include "forward_checking.h"
+
 
 
 using namespace Microsoft::VisualStudio::CppUnitTestFramework;
@@ -12,10 +10,9 @@ using namespace Microsoft::VisualStudio::CppUnitTestFramework;
 
 namespace cspTests
 {
-	TEST_CLASS(HeuristicBacktrackingTests)
+	TEST_CLASS(pc2Tests)
 	{
 	public:
-
 		const std::unordered_set<std::string> domain{ "Red", "Green", "Blue" };
 		const std::unordered_set<std::string> names{ "nt", "q", "nsw", "v", "t", "sa", "wa" };
 		std::unordered_map<std::string, csp::Variable<std::string>> NameToVarUMap = csp::Variable<std::string>::constructFromNamesToEqualDomain(names, domain);
@@ -34,23 +31,15 @@ namespace cspTests
 		csp::ConstraintProblem<std::string> graphColoringProb{ {constr1, constr2, constr3, constr4, constr5, constr6, constr7, constr8,
 			constr9, constr10} };
 
-		TEST_METHOD_INITIALIZE(HeuristicBacktrackingTestsSetUp)
+		TEST_METHOD_INITIALIZE(pc2TestsSetUp)
 		{
 			graphColoringProb.unassignAllVariables();
 		}
 
-		TEST_METHOD(TestClassicHeuristicBacktracking)
+		TEST_METHOD(TestOneAC3)
 		{
-			const csp::AssignmentHistory<std::string>& assignmentHistory = csp::heuristicBacktrackingSolver<std::string>(graphColoringProb,
-				csp::minimumRemainingValues_primarySelector<std::string>,
-				csp::degreeHeuristic_secondarySelector<std::string>,
-				csp::leastConstrainingValue<std::string>,
-				csp::forwardChecking<std::string>);
-			Assert::IsTrue(graphColoringProb.isCompletelyConsistentlyAssigned());
+			bool pc2Res = csp::pc2(graphColoringProb);
+			Assert::IsTrue(pc2Res);
 		}
 	};
 }
-
-
-// TODO:
-// implement ac4

@@ -165,10 +165,12 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="ac3_tests.cpp" />
+    <ClCompile Include="ac4_tests.cpp" />
     <ClCompile Include="backtracking_tests.cpp" />
     <ClCompile Include="constraint_problem_tests.cpp" />
     <ClCompile Include="constraint_tests.cpp" />
     <ClCompile Include="heuristic_backtracking_tests.cpp" />
+    <ClCompile Include="pc2_tests.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>

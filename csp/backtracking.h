@@ -7,15 +7,16 @@
 namespace csp
 {
 	template <typename T>
-	const AssignmentHistory<T> backtrackingSolver(const ConstraintProblem<T>& constraintProblem, bool withHistory = false)
+	const AssignmentHistory<T> backtrackingSolver(const ConstraintProblem<T>& constraintProblem, bool writeAssignmentHistory = false)
 	{
 		AssignmentHistory<T> assignmentHistory;
-		__backtrackingSolver(constraintProblem, assignmentHistory, withHistory);
+		__backtrackingSolver(constraintProblem, assignmentHistory, writeAssignmentHistory);
 		return assignmentHistory;
 	}
 
 	template <typename T>
-	static bool __backtrackingSolver(const ConstraintProblem<T>& constraintProblem, AssignmentHistory<T>& assignmentHistory, bool withHistory)
+	static bool __backtrackingSolver(const ConstraintProblem<T>& constraintProblem, AssignmentHistory<T>& assignmentHistory, 
+		bool writeAssignmentHistory)
 	{
 		if (constraintProblem.isCompletelyAssigned())
 		{
@@ -34,18 +35,18 @@ namespace csp
 		for (T value : selectedVar.getDomain())
 		{
 			selectedVar.assign(value);
-			if (withHistory)
+			if (writeAssignmentHistory)
 			{
 				assignmentHistory.emplace_back(selectedVar, std::optional<T>{value});
 			}
 
-			if (__backtrackingSolver(constraintProblem, assignmentHistory, withHistory))
+			if (__backtrackingSolver(constraintProblem, assignmentHistory, writeAssignmentHistory))
 			{
 				return true;
 			}
 
 			selectedVar.unassign();
-			if (withHistory)
+			if (writeAssignmentHistory)
 			{
 				assignmentHistory.emplace_back(selectedVar, std::optional<T>{});
 			}
@@ -75,7 +76,7 @@ namespace csp
 
 		const std::vector<std::reference_wrapper<Variable<T>>>& unassignedVars = constraintProblem.getUnassignedVariables();
 		Variable<T>& selectedVar = unassignedVars[0];
-		for (const T value : selectedVar.getDomain())
+		for (T value : selectedVar.getDomain())
 		{
 			selectedVar.assign(value);
 			__backtrackingSolver_findAllSolutions(constraintProblem, solutions);

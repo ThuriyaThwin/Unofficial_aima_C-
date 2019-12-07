@@ -9,6 +9,7 @@ using namespace Microsoft::VisualStudio::CppUnitTestFramework;
 bool stringAllDifferent(const std::vector<std::string>& values)
 {
 	std::unordered_set<std::string> seenValues;
+	seenValues.reserve(values.size());
 	for (const std::string& val : values)
 	{
 		if (seenValues.count(val) == 1)
@@ -274,7 +275,7 @@ namespace cspTests
 			{
 				for (const std::pair<std::string, csp::Variable<std::string>>& nameToVar : NameToVarUMap)
 				{
-					if (varToVal.first.get() == nameToVar.second)		//	TODO: here is a bag, it never enters this if.
+					if (varToVal.first.get() == nameToVar.second)		//	TODO: here is a bug, it never enters this if.
 					{
 						if (nameToVar.first == "wa" || nameToVar.first == "q" || nameToVar.first == "v")
 						{

@@ -26,6 +26,7 @@ namespace csp
 
 		int smallestConsistentDomainSize = scoreToVarMap.cbegin()->first;
 		std::vector<std::reference_wrapper<Variable<T>>> variables;
+		variables.reserve(scoreToVarMap.size() >> 2);
 		for (const std::pair<int, std::reference_wrapper<Variable<T>>>& scoreToVar : scoreToVarMap)
 		{
 			if (scoreToVar.first == smallestConsistentDomainSize)
@@ -66,6 +67,7 @@ namespace csp
 
 		int biggestUnassignedNeighborsSize = scoreToVarMap.crbegin()->first;
 		std::vector<std::reference_wrapper<Variable<T>>> variables;
+		variables.reserve(scoreToVarMap.size() >> 2);
 		for (const auto& it = scoreToVarMap.crbegin(); it != scoreToVarMap.crend(); ++it)
 		{
 			if (it->first == biggestUnassignedNeighborsSize)

@@ -9,23 +9,23 @@ namespace csp
 	template <typename T>
 	using PrimarySelector = std::function<std::vector<std::reference_wrapper<Variable<T>>>(ConstraintProblem<T>& constraintProblem)>;
 	template <typename T>
-	using SecondarySelector = std::function<Variable<T> & (ConstraintProblem<T>&, const std::vector<std::reference_wrapper<Variable<T>>> & candidateVars)>;
+	using SecondarySelector = std::function<Variable<T>& (ConstraintProblem<T>&, const std::vector<std::reference_wrapper<Variable<T>>>& candidateVars)>;
 	template <typename T>
 	using DomainSorter = std::function<const std::vector<T>(ConstraintProblem<T>&, Variable<T>&)>;
 	template <typename T>
-	using Inference = std::function<bool(ConstraintProblem<T>&, Variable<T> & assignedVariable)>;
+	using Inference = std::function<bool(ConstraintProblem<T>&, Variable<T>& assignedVariable)>;
 
 	template <typename T>
 	const AssignmentHistory<T> heuristicBacktrackingSolver(ConstraintProblem<T>& constraintProblem,
 		const PrimarySelector<T>& primarySelector,
 		const SecondarySelector<T>& secondarySelector = csp::chooseFirstCandidateVar_secondarySelector,
-		const std::optional<DomainSorter<T>>& domainSorter = std::optional<DomainSorter<T>>{},
-		const std::optional<Inference<T>> inference = std::optional<Inference<T>>{},
-		bool withHistory = false)
+		const std::optional<DomainSorter<T>>& optDomainSorter = std::optional<DomainSorter<T>>{},
+		const std::optional<Inference<T>> optInference = std::optional<Inference<T>>{},
+		bool writeAssignmentHistory = false)
 	{
 		AssignmentHistory<T> assignmentHistory;
-		__heuristicBacktrackingSolver(constraintProblem, primarySelector, secondarySelector, domainSorter, inference, withHistory,
-			assignmentHistory);
+		__heuristicBacktrackingSolver(constraintProblem, primarySelector, secondarySelector, optDomainSorter, optInference, 
+			writeAssignmentHistory, assignmentHistory);
 		return assignmentHistory;
 	}
 
@@ -33,9 +33,9 @@ namespace csp
 	static bool __heuristicBacktrackingSolver(ConstraintProblem<T>& constraintProblem,
 		const PrimarySelector<T>& primarySelector,
 		const SecondarySelector<T>& secondarySelector,
-		const std::optional<DomainSorter<T>>& domainSorter,
-		const std::optional<Inference<T>>& inference,
-		bool withHistory,
+		const std::optional<DomainSorter<T>>& optDomainSorter,
+		const std::optional<Inference<T>>& optInference,
+		bool writeAssignmentHistory,
 		AssignmentHistory<T>& assignmentHistory)
 	{
 		if (constraintProblem.isCompletelyAssigned())
@@ -50,36 +50,36 @@ namespace csp
 			}
 		}
 
-		const std::vector<std::reference_wrapper<Variable<T>>> candidateVars = primarySelector(constraintProblem);
+		const std::vector<std::reference_wrapper<Variable<T>>>& candidateVars = primarySelector(constraintProblem);
 		Variable<T>& selectedVar = candidateVars.size() == 1 ? candidateVars[0].get() : secondarySelector(constraintProblem, candidateVars);
 
-		const std::vector<T>& sortedDomain = domainSorter ? domainSorter.value()(constraintProblem, selectedVar) : selectedVar.getDomain();
+		const std::vector<T>& sortedDomain = optDomainSorter ? optDomainSorter.value()(constraintProblem, selectedVar) : selectedVar.getDomain();
 		for (T value : sortedDomain)
 		{
 			selectedVar.assign(value);
-			if (withHistory)
+			if (writeAssignmentHistory)
 			{
 				assignmentHistory.emplace_back(selectedVar, std::optional<T>{value});
 			}
 
-			if (inference && inference.value()(constraintProblem, selectedVar))
+			if (optInference && optInference.value()(constraintProblem, selectedVar))
 			{
 				selectedVar.unassign();
-				if (withHistory)
+				if (writeAssignmentHistory)
 				{
 					assignmentHistory.emplace_back(selectedVar, std::optional<T>{});
 				}
 				return false;
 			}
 
-			if (__heuristicBacktrackingSolver(constraintProblem, primarySelector, secondarySelector, domainSorter, inference,
-				withHistory, assignmentHistory))
+			if (__heuristicBacktrackingSolver(constraintProblem, primarySelector, secondarySelector, optDomainSorter, optInference,
+				writeAssignmentHistory, assignmentHistory))
 			{
 				return true;
 			}
 
 			selectedVar.unassign();
-			if (withHistory)
+			if (writeAssignmentHistory)
 			{
 				assignmentHistory.emplace_back(selectedVar, std::optional<T>{});
 			}
@@ -117,7 +117,7 @@ namespace csp
 			return;
 		}
 
-		const std::vector<std::reference_wrapper<Variable<T>>> candidateVars = primarySelector(constraintProblem);
+		const std::vector<std::reference_wrapper<Variable<T>>>& candidateVars = primarySelector(constraintProblem);
 		Variable<T>& selectedVar = candidateVars.size() == 1 ? candidateVars[0].get() : secondarySelector(constraintProblem, candidateVars);
 
 		const std::vector<T>& sortedDomain = domainSorter ? domainSorter.value()(constraintProblem, selectedVar) : selectedVar.getDomain();

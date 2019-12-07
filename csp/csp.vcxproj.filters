@@ -66,6 +66,18 @@
     <ClInclude Include="arc_consistency_3.h">
       <Filter>Header Files\cspPreprocessing</Filter>
     </ClInclude>
+    <ClInclude Include="arc_consistency_4.h">
+      <Filter>Header Files\cspPreprocessing</Filter>
+    </ClInclude>
+    <ClInclude Include="path_consistency_2.h">
+      <Filter>Header Files\cspPreprocessing</Filter>
+    </ClInclude>
+    <ClInclude Include="maintaining arc consistency.h">
+      <Filter>Header Files\cspInferences</Filter>
+    </ClInclude>
+    <ClInclude Include="min_conflicts.h">
+      <Filter>Header Files\cspSolvers</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp">

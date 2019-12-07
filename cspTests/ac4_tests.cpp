@@ -1,6 +1,6 @@
 #include "pch.h"
 #include "CppUnitTest.h"
-#include "arc_consistency_3.h"
+#include "arc_consistency_4.h"
 #include "constraint_evaluators.h"
 
 
@@ -10,7 +10,7 @@ using namespace Microsoft::VisualStudio::CppUnitTestFramework;
 
 namespace cspTests
 {
-	TEST_CLASS(ac3Tests)
+	TEST_CLASS(ac4Tests)
 	{
 	public:
 		const std::unordered_set<std::string> domain{ "Red", "Green", "Blue" };
@@ -28,8 +28,8 @@ namespace cspTests
 		csp::Constraint<std::string> constr9{ {NameToVarUMap.at("nsw"), NameToVarUMap.at("v")}, csp::allDiff<std::string> };
 		csp::Constraint<std::string> constr10{ {NameToVarUMap.at("t")}, [](const std::vector<std::string>& values) -> bool {return true; } };
 
-		csp::ConstraintProblem<std::string> graphColoringProb{ {constr1, constr2, constr3, constr4, constr5, constr6, constr7, constr8,
-			constr9, constr10} };
+		csp::ConstraintProblem<std::string> graphColoringProb{ {constr1, constr2, constr3, constr4, constr5, constr6, constr7, 
+			constr8, constr9, constr10} };
 
 
 		csp::Variable<int> x{ {2, 5} };
@@ -54,7 +54,7 @@ namespace cspTests
 		csp::Variable<int> s{ {1, 2, 3} };
 		csp::Variable<int> t{ {1, 2, 3} };
 
-		std::function<bool(const std::vector<int>&)> lessThan = [](const std::vector<int>& values)->bool
+		std::function<bool(const std::vector<int>&)> lessThan = [](const std::vector<int>& values) -> bool
 		{
 			if (values.size() < 2)
 			{
@@ -66,20 +66,20 @@ namespace cspTests
 		csp::Constraint<int> constr13{ {s, t}, lessThan };
 		csp::ConstraintProblem<int> constProb2{ {constr13} };
 
-		TEST_METHOD_INITIALIZE(ac3TestsSetUp)
+		TEST_METHOD_INITIALIZE(ac4TestsSetUp)
 		{
 			graphColoringProb.unassignAllVariables();
 			constProb1.unassignAllVariables();
 			constProb2.unassignAllVariables();
 		}
 
-		TEST_METHOD(TestOneAC3)
+		TEST_METHOD(TestOneAC4)
 		{
-			bool ac3Res = ac3(constProb1, csp::initArcsAC3(constProb1));
-			Assert::IsTrue(ac3Res);
+			bool ac4Res = csp::ac4(constProb1);
+			Assert::IsTrue(ac4Res);
 		}
 
-		TEST_METHOD(TestTwoAC3)
+		TEST_METHOD(TestTwoAC4)
 		{
 			std::unordered_set<int> actualAllValues;
 			for (const csp::Variable<int>& var : constProb1.getVariables())
@@ -91,9 +91,8 @@ namespace cspTests
 			}
 			std::unordered_set<int> expectedAllValues{ 2, 4, 5 };
 			Assert::IsTrue(actualAllValues == expectedAllValues);
-
-			bool ac3Res = ac3(constProb1, csp::initArcsAC3(constProb1));
-			Assert::IsTrue(ac3Res);
+			bool ac4Res = csp::ac4(constProb1);
+			Assert::IsTrue(ac4Res);
 
 			std::unordered_set<int> actualReducedValues;
 			for (const csp::Variable<int>& var : constProb1.getVariables())
@@ -107,22 +106,27 @@ namespace cspTests
 			Assert::IsTrue(actualReducedValues == expectedReducedValues);
 		}
 
-		TEST_METHOD(TestThreeAC3)
+		TEST_METHOD(TestThreeAC4)
 		{
-			bool ac3Res = ac3(constProb2, csp::initArcsAC3(constProb2));
-			Assert::IsTrue(ac3Res);
-			const std::vector<int> firstVarExpectedReducedDomain{ 1, 2 };
-			const std::vector<int> secondVarExpectedReducedDomain{ 2, 3 };
-			const std::vector<std::reference_wrapper<csp::Variable<int>>>& variables = constProb2.getVariables();
-			for (const csp::Variable<int>& var : variables)
+			// same as TestThreeAC3
+			bool ac4Res = csp::ac4(constProb2);
+			Assert::IsTrue(ac4Res);
+			for (const csp::Variable<int>& var : constProb2.getVariables())
 			{
-				if (std::find(var.getDomain().cbegin(), var.getDomain().cend(), 3) != var.getDomain().cend())
+				const auto& oneFindRes = std::find(var.getDomain().cbegin(), var.getDomain().cend(), 1);
+				if (oneFindRes != var.getDomain().cend())
 				{
-					Assert::IsTrue(var.getDomain() == secondVarExpectedReducedDomain);
+					const auto& twoFindRes = std::find(var.getDomain().cbegin(), var.getDomain().cend(), 2);
+					Assert::IsTrue(twoFindRes != var.getDomain().cend());
 				}
 				else
 				{
-					Assert::IsTrue(var.getDomain() == firstVarExpectedReducedDomain);
+					const auto& threeFindRes = std::find(var.getDomain().cbegin(), var.getDomain().cend(), 3);
+					if (threeFindRes != var.getDomain().cend())
+					{
+						const auto& twoFindRes = std::find(var.getDomain().cbegin(), var.getDomain().cend(), 2);
+						Assert::IsTrue(twoFindRes != var.getDomain().cend());
+					}
 				}
 			}
 		}

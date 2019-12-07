@@ -35,6 +35,7 @@ namespace csp
 	bool allDiff(const std::vector<T>& assignedValues)
 	{
 		std::unordered_set<T> seenValues;
+		seenValues.reserve(assignedValues.size());
 		for (T value : assignedValues)
 		{
 			if (seenValues.count(value) == 1)

@@ -125,10 +125,10 @@ namespace csp
 		bool revised = false;
 		const std::vector<std::reference_wrapper<Constraint<T>>>& variableConstraints = constraintProblem.getConstraintsContainingVariable(variable);
 		const std::vector<std::reference_wrapper<Constraint<T>>>& neighborConstraints = constraintProblem.getConstraintsContainingVariable(neighbor);
-		std::optional<std::reference_wrapper<Constraint<T>>>& sharedConstr = __findSharedConstraint<T>(variableConstraints, neighborConstraints);
-		if (sharedConstr)
+		std::optional<std::reference_wrapper<Constraint<T>>>& optSharedConstr = __findSharedConstraint<T>(variableConstraints, neighborConstraints);
+		if (optSharedConstr)
 		{
-			Constraint<T>& sharedConstraint = sharedConstr.value();
+			Constraint<T>& sharedConstraint = *optSharedConstr;
 			const std::vector<T>& variableDomain = variable.getDomain();
 			for (size_t i = 0; i < variableDomain.size(); ++i)
 			{

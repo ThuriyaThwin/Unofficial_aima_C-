@@ -5,17 +5,15 @@
 
 
 template <typename T>
-using VariableValuePair = std::pair<std::reference_wrapper<csp::Variable<T>>, T>;
-template <typename T>
 using VariableValueNeighborTriplet = std::tuple<std::reference_wrapper<csp::Variable<T>>, T, std::reference_wrapper<csp::Variable<T>>>;
 
 
 namespace std
 {
 	template <typename T>
-	struct std::hash<typename VariableValuePair<T>>
+	struct std::hash<typename csp::VariableValuePair<T>>
 	{
-		size_t operator()(const VariableValuePair<T>& variableValuePair) const
+		size_t operator()(const csp::VariableValuePair<T>& variableValuePair) const
 		{
 			std::hash<T> valueHasher;
 			std::hash<std::reference_wrapper<csp::Variable<T>>> varRefHasher;

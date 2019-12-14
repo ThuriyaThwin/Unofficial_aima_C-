@@ -14,17 +14,17 @@ namespace csp
 		bool writeAssignmentHistory = false)
 	{
 		AssignmentHistory<T> assignmentHistory;
-		if (optReadOnlyVars && constraintProblem.getVariables().size() <= tabuSize + optReadOnlyVars.value().size() ||
+		if (optReadOnlyVars && constraintProblem.getVariables().size() <= tabuSize + (*optReadOnlyVars).size() ||
 			constraintProblem.getVariables().size() <= tabuSize)
 		{
 			// TODO: write an exception
 			throw 1;
 		}
 		
-		constraintProblem.assignWithRandomValues(optReadOnlyVars, assignmentHistory);
+		constraintProblem.assignVarsWithRandomValues(optReadOnlyVars, assignmentHistory);
 
 		size_t bestMinConflicts = constraintProblem.getUnsatisfiedConstraintsSize();
-		Assignment<T>* bestMinConflictsAssignment = &(constraintProblem.getCurrentAssignment());
+		const Assignment<T>* bestMinConflictsAssignment = &(constraintProblem.getCurrentAssignment());
 		for (unsigned int i = 0; i < maxSteps; ++i)
 		{
 			if (constraintProblem.isCompletelyConsistentlyAssigned())
@@ -50,49 +50,45 @@ namespace csp
 			if (currConflictsCount < bestMinConflicts)
 			{
 				bestMinConflicts = currConflictsCount;
-				*bestMinConflictsAssignment = constraintProblem.getCurrentAssignment();
+				bestMinConflictsAssignment = &(constraintProblem.getCurrentAssignment());
 			}
 		}
 
 		constraintProblem.unassignAllVariables();
 		constraintProblem.assignFromAssignment(*bestMinConflictsAssignment);
+		return assignmentHistory;
 	}
 
 	template <typename T>
 	static Variable<T>& __getRandomConflictedVariable(ConstraintProblem<T>& constraintProblem,
 		std::optional<std::unordered_set<std::reference_wrapper<Variable<T>>>> optReadOnlyVars)
 	{
-		std::vector<std::reference_wrapper<Variable<T>>>& variables = constraintProblem.getVariables();
+		const std::vector<std::reference_wrapper<Variable<T>>>& variables = constraintProblem.getVariables();
 		std::unordered_set<std::reference_wrapper<Variable<T>>> conflictedVars;
 		conflictedVars.reserve(variables.size());
 		for (const Constraint<T>& constr : constraintProblem.getUnsatisfiedConstraints())
 		{
-			std::vector<std::reference_wrapper<Variable<T>>>& constrVars = constr.getVariables();
+			const std::vector<std::reference_wrapper<Variable<T>>>& constrVars = constr.getVariables();
 			conflictedVars.insert(constrVars.cbegin(), constrVars.cend());
 		}
 		if (optReadOnlyVars)
 		{
-			for (auto& it = conflictedVars.begin(); it != conflictedVars.end())
+			for (auto& it = conflictedVars.begin(); it != conflictedVars.end(); )
 			{
-				if (optReadOnlyVars.value().count(*it))
+				if ((*optReadOnlyVars).count(*it))
 				{
 					it = conflictedVars.erase(it);
 				}
 				else
 				{
-					++it
+					++it;
 				}
 			}
 		}
 
-		int randIdx = rand() & conflictedVars.size();
-		for (auto& it = conflictedVars.begin(), size_t i = 0; i < randIdx; ++i, ++it)
-		{
-			if (i == randIdx - 1)
-			{
-				return *(it).get();
-			}
-		}
+		Variable<T>& var = 
+			__selectElementRandomly<std::reference_wrapper<Variable<T>>, std::unordered_set<std::reference_wrapper<Variable<T>>>>(conflictedVars);
+		return var;
 	}
 
 	template <typename T>
@@ -119,7 +115,6 @@ namespace csp
 			conflictedVar.unassign();
 		}
 
-		int randIdx = rand() % minConflictingValues.size();
-		return minConflictingValues[randIdx];
+		return __selectElementRandomly<T, std::vector<T>>(minConflictingValues);
 	}
 }

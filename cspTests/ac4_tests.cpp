@@ -1,8 +1,6 @@
 #include "pch.h"
 #include "CppUnitTest.h"
-#include "arc_consistency_4.h"
-#include "constraint_evaluators.h"
-
+#include <csp.h>
 
 
 using namespace Microsoft::VisualStudio::CppUnitTestFramework;

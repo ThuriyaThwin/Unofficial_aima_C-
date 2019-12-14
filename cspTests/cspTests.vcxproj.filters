@@ -36,12 +36,6 @@
     <ClCompile Include="constraint_problem_tests.cpp">
       <Filter>Source Files\cspClassesTests</Filter>
     </ClCompile>
-    <ClCompile Include="backtracking_tests.cpp">
-      <Filter>Source Files\cspSolversTests</Filter>
-    </ClCompile>
-    <ClCompile Include="heuristic_backtracking_tests.cpp">
-      <Filter>Source Files\cspSolversTests</Filter>
-    </ClCompile>
     <ClCompile Include="ac3_tests.cpp">
       <Filter>Source Files\cspPreprocessingTests</Filter>
     </ClCompile>
@@ -50,6 +44,9 @@
     </ClCompile>
     <ClCompile Include="pc2_tests.cpp">
       <Filter>Source Files\cspPreprocessingTests</Filter>
+    </ClCompile>
+    <ClCompile Include="graph_coloring_problem.cpp">
+      <Filter>Source Files\cspSolversTests</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

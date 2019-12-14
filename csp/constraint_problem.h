@@ -4,11 +4,25 @@
 #include "constraint.h"
 
 
+
+template <typename T, typename Container>
+T __selectElementRandomly(const Container& containerIn)
+{
+	Container containerOut;
+	std::sample(containerIn.cbegin(), containerIn.cend(), std::inserter(containerOut, containerOut.end()), 1, 
+		std::mt19937{ std::random_device{}() });
+	return *(containerOut.cbegin());
+}
+
+
+
 namespace csp
 {
 	template<typename T>
 	using AssignmentHistory = std::deque<std::pair<std::reference_wrapper<Variable<T>>, std::optional<T>>>;
 
+	template <typename T>
+	using VariableValuePair = std::pair<std::reference_wrapper<csp::Variable<T>>, T>;
 
 	template<typename T> class duplicate_constraint_error;
 	template<typename T> using Assignment = std::unordered_map<std::reference_wrapper<Variable<T>>, T>;
@@ -38,7 +52,7 @@ namespace csp
 				constraintsAddresses.emplace(&(constr));
 			}
 			ConstraintsRefsVector myConstraints{ constraints };
-			return myConstraints;
+			return std::move(myConstraints);
 		}
 
 		static const VarToConstraintsMap initVariableToConstraints(const ConstraintsRefsVector& constraints) noexcept
@@ -56,17 +70,17 @@ namespace csp
 					}
 				}
 			}
-			return variableToConstraints;
+			return std::move(variableToConstraints);
 		}
 
-		static const VariableRefsVector initVariables(const VarToConstraintsMap& variableToConstraints)
+		static const VariableRefsVector initVariables(const VarToConstraintsMap& variableToConstraints) noexcept
 		{
 			VariableRefsVector variables;
 			for (const std::pair<VariableRef, ConstraintsRefsVector>& varToConstraints : variableToConstraints)
 			{
 				variables.emplace_back(varToConstraints.first);
 			}
-			return variables;
+			return std::move(variables);
 		}
 
 		static const AdjacencListConstraintGraph initConstraintGraph(const VarToConstraintsMap& variableToConstraints) noexcept
@@ -92,16 +106,18 @@ namespace csp
 				else
 				{
 					VariableRefsVector& currNeighbors = constraintGraph.at(varToConstraints.first);
+					const auto& currNeighborsItToStart = currNeighbors.cbegin();
+					const auto& currNeighborsItToEnd = currNeighbors.cend();
 					std::copy_if(neighbors.cbegin(), neighbors.cend(), back_inserter(currNeighbors),
-						[&currNeighbors](const Variable<T>& var) -> bool
-						{ return std::find(currNeighbors.cbegin(), currNeighbors.cend(), var) != currNeighbors.cend(); });
+						[&currNeighborsItToStart, &currNeighborsItToEnd](const Variable<T>& var) -> bool
+						{ return std::find(currNeighborsItToStart, currNeighborsItToEnd, var) != currNeighborsItToEnd; });
 				}
 			}
-			return constraintGraph;
+			return std::move(constraintGraph);
 		}
 
 		void initAllValuesAndAllConsistentDomains(Variable<T>& var, std::unordered_set<T>& allValues,
-			std::unordered_multiset<std::unordered_set<T>>& allConsistentDomains)
+			std::unordered_multiset<std::unordered_set<T>>& allConsistentDomains) const noexcept
 		{
 			const ConstraintsRefsVector& constraintsContainingVar = m_umapVariableToConstraints.at(var);
 			for (Constraint<T>& constraint : constraintsContainingVar)
@@ -112,25 +128,94 @@ namespace csp
 			}
 		}
 
-		const ConstraintsRefsVector m_vecConstraints;							// vector<reference_wrapper<Constraint<T>>>
-		const VarToConstraintsMap m_umapVariableToConstraints;				// unordered_map<variable_ref, constraints_refs_vector>;
-		const VariableRefsVector m_vecVariables;								// vector<reference_wrapper<Variable<T>>>;
-		const AdjacencListConstraintGraph m_umapConstraintGraph;			// unordered_map<variable_ref, variables_refs_vector>;
-		const NameToVariableRefMap m_umapNameToVariableRef;						// unordered_map<string, variable_ref>;
+		ConstraintsRefsVector m_vecConstraints;							// vector<reference_wrapper<Constraint<T>>>
+		VarToConstraintsMap m_umapVariableToConstraints;				// unordered_map<variable_ref, constraints_refs_vector>;
+		VariableRefsVector m_vecVariables;								// vector<reference_wrapper<Variable<T>>>;
+		AdjacencListConstraintGraph m_umapConstraintGraph;				// unordered_map<variable_ref, variables_refs_vector>;
+		NameToVariableRefMap m_umapNameToVariableRef;					// unordered_map<string, variable_ref>;
 
 	public:
 		ConstraintProblem() = delete;
 		ConstraintProblem(const ConstraintsRefsVector& constraints,
-			const NameToVariableRefMap& umapNameToVariableRef = {}) :
+			const NameToVariableRefMap& umapNameToVariableRef = std::unordered_map<std::string, VariableRef>{}) :
 			m_vecConstraints{ initConstraints(constraints) }, m_umapVariableToConstraints{ initVariableToConstraints(m_vecConstraints) },
 			m_vecVariables{ initVariables(m_umapVariableToConstraints) },
-			m_umapConstraintGraph{ initConstraintGraph(m_umapVariableToConstraints) }, m_umapNameToVariableRef{ umapNameToVariableRef } { }
+			m_umapConstraintGraph{ initConstraintGraph(m_umapVariableToConstraints) }, m_umapNameToVariableRef{ umapNameToVariableRef } 
+		{ }
 
-		ConstraintProblem(ConstraintProblem&&) = default;
-		ConstraintProblem& operator=(ConstraintProblem&&) = default;
-		ConstraintProblem(const ConstraintProblem&) = default;
-		ConstraintProblem& operator=(const ConstraintProblem&) = default;
+		// TODO: write test
+		ConstraintProblem(const ConstraintProblem& otherConstrProb): m_vecConstraints{ otherConstrProb.m_vecConstraints },
+			m_umapVariableToConstraints{ otherConstrProb.m_umapVariableToConstraints }, m_vecVariables{ otherConstrProb.m_vecVariables },
+			m_umapConstraintGraph{ otherConstrProb.m_umapConstraintGraph }, m_umapNameToVariableRef{ otherConstrProb.m_umapNameToVariableRef }
+		{ }
+
+		// TODO: write test
+		ConstraintProblem& operator=(const ConstraintProblem& otherConstrProb)
+		{
+			return *this = ConstraintProblem<T>(otherConstrProb);
+		}
+
+		// TODO: write test
+		ConstraintProblem(ConstraintProblem&& otherConstrProb) noexcept:
+			m_vecConstraints{ std::exchange(otherConstrProb.m_vecConstraints, std::vector<std::reference_wrapper<Constraint<T>>>{}) },
+			m_umapVariableToConstraints{ std::exchange(otherConstrProb.m_umapVariableToConstraints, 
+				std::unordered_map<std::reference_wrapper<Variable<T>>, std::vector<std::reference_wrapper<Constraint<T>>>>{}) },
+			m_vecVariables{ std::exchange(otherConstrProb.m_vecVariables, std::vector<std::reference_wrapper<Variable<T>>>{}) },
+			m_umapConstraintGraph{ std::exchange(otherConstrProb.m_umapConstraintGraph, 
+				std::unordered_map<std::reference_wrapper<Variable<T>>, std::vector<std::reference_wrapper<Variable<T>>>>{}) },
+			m_umapNameToVariableRef{ std::exchange(otherConstrProb.m_umapNameToVariableRef,
+				std::unordered_map<std::string, std::reference_wrapper<Variable<T>>>{}) }
+		{ }
+		
+		// TODO: write test
+		ConstraintProblem& operator=(ConstraintProblem&& otherConstrProb) noexcept
+		{
+			std::swap(m_vecConstraints, otherConstrProb.m_vecConstraints);
+			std::swap(m_umapVariableToConstraints, otherConstrProb.m_umapVariableToConstraints);
+			std::swap(m_vecVariables, otherConstrProb.m_vecVariables);
+			std::swap(m_umapConstraintGraph, otherConstrProb.m_umapConstraintGraph);
+			std::swap(m_umapNameToVariableRef, otherConstrProb.m_umapNameToVariableRef);
+			return *this;
+		}
+		
 		~ConstraintProblem() = default;
+
+		ConstraintProblem<T> deepCopy(std::vector<Variable<T>>& copiedVars, 
+			std::vector<Constraint<T>>& copiedConstraints) const noexcept
+		{
+			copiedVars.reserve(m_vecVariables.size());
+			std::unordered_map<Variable<T>*, size_t> origVarPtrToCopiedVarIdx;
+			origVarPtrToCopiedVarIdx.reserve(m_vecVariables.size());
+			copiedConstraints.reserve(m_vecConstraints.size());
+			std::vector<std::reference_wrapper<Constraint<T>>> copiedConstraintRefs;
+			copiedConstraintRefs.reserve(m_vecConstraints.size());
+			
+			for (Constraint<T>& constr : m_vecConstraints)
+			{
+				const std::vector<std::reference_wrapper<Variable<T>>>& constraintVars = constr.getVariables();
+				std::vector<std::reference_wrapper<Variable<T>>> constrCopiedVarRefs;
+				constrCopiedVarRefs.reserve(constraintVars.size());
+				for (Variable<T>& var : constraintVars)
+				{
+					if (!origVarPtrToCopiedVarIdx.count(&var))
+					{
+						copiedVars.push_back(var);
+						origVarPtrToCopiedVarIdx.emplace(&var, copiedVars.size() - 1);
+						constrCopiedVarRefs.emplace_back(copiedVars.back());
+					}
+					else
+					{
+						constrCopiedVarRefs.emplace_back(copiedVars[origVarPtrToCopiedVarIdx[&var]]);
+					}
+				}
+
+				copiedConstraints.emplace_back(constrCopiedVarRefs, constr.getConstraintEvaluator());
+				copiedConstraintRefs.emplace_back(copiedConstraints.back());
+			}
+
+			ConstraintProblem<T> copiedConstraintProblem{ copiedConstraintRefs };
+			return std::move(copiedConstraintProblem);
+		}
 
 		const NameToVariableRefMap& getNameToVariableMap() const noexcept { return m_umapNameToVariableRef; }
 
@@ -158,7 +243,7 @@ namespace csp
 			return true;
 		}
 
-		constexpr bool isConsistentlyAssigned() const  noexcept
+		constexpr bool isConsistentlyAssigned() const noexcept
 		{
 			for (const Constraint<T>& constraint : m_vecConstraints)
 			{
@@ -172,6 +257,7 @@ namespace csp
 
 		constexpr bool isCompletelyConsistentlyAssigned() const noexcept
 		{
+			// TODO: use threads
 			return this->isCompletelyAssigned() && this->isConsistentlyAssigned();
 		}
 
@@ -198,7 +284,7 @@ namespace csp
 					assignedVariables.emplace_back(var);
 				}
 			}
-			return assignedVariables;
+			return std::move(assignedVariables);
 		}
 
 		const VariableRefsVector getUnassignedVariables() const noexcept
@@ -211,10 +297,10 @@ namespace csp
 					unassignedVariables.emplace_back(var);
 				}
 			}
-			return unassignedVariables;
+			return std::move(unassignedVariables);
 		}
 
-		const VariableRefsVector getNeighbors(Variable<T>& var)
+		const VariableRefsVector getNeighbors(Variable<T>& var) const
 		{
 			return m_umapConstraintGraph.at(var);
 		}
@@ -230,7 +316,7 @@ namespace csp
 					assignedNeighbors.emplace_back(neighborVar);
 				}
 			}
-			return assignedNeighbors;
+			return std::move(assignedNeighbors);
 		}
 
 		const VariableRefsVector getUnassignedNeighbors(Variable<T>& var) const
@@ -244,7 +330,7 @@ namespace csp
 					unassignedNeighbors.emplace_back(neighborVar);
 				}
 			}
-			return unassignedNeighbors;
+			return std::move(unassignedNeighbors);
 		}
 
 		const ConstraintsRefsVector& getConstraints() const noexcept
@@ -262,7 +348,20 @@ namespace csp
 					consistentConstraints.emplace_back(constraint);
 				}
 			}
-			return consistentConstraints;
+			return std::move(consistentConstraints);
+		}
+
+		constexpr size_t getConsistentConstraintsSize() const noexcept
+		{
+			size_t consistentConstraintsSize = 0;
+			for (Constraint<T>& constraint : m_vecConstraints)
+			{
+				if (constraint.isConsistent())
+				{
+					++consistentConstraintsSize;
+				}
+			}
+			return consistentConstraintsSize;
 		}
 
 		const ConstraintsRefsVector getInconsistentConstraints() const noexcept
@@ -275,7 +374,7 @@ namespace csp
 					inconsistentConstraints.emplace_back(constraint);
 				}
 			}
-			return inconsistentConstraints;
+			return std::move(inconsistentConstraints);
 		}
 
 		const ConstraintsRefsVector getSatisfiedConstraints() const noexcept
@@ -288,7 +387,7 @@ namespace csp
 					satisfiedConstraints.emplace_back(constraint);
 				}
 			}
-			return satisfiedConstraints;
+			return std::move(satisfiedConstraints);
 		}
 
 		const ConstraintsRefsVector getUnsatisfiedConstraints() const noexcept
@@ -301,10 +400,10 @@ namespace csp
 					unsatisfiedConstraints.emplace_back(constraint);
 				}
 			}
-			return unsatisfiedConstraints;
+			return std::move(unsatisfiedConstraints);
 		}
 
-		const size_t getUnsatisfiedConstraintsSize() const noexcept
+		constexpr size_t getUnsatisfiedConstraintsSize() const noexcept
 		{
 			size_t unsatisfiedConstraintsSize = 0;
 			for (Constraint<T>& constraint : m_vecConstraints)
@@ -322,7 +421,7 @@ namespace csp
 			return m_umapVariableToConstraints.at(var);
 		}
 
-		const std::vector<T> getConsistentDomain(Variable<T>& var)
+		const std::vector<T> getConsistentDomain(Variable<T>& var) noexcept
 		{
 			std::unordered_set<T> allValues;
 			std::unordered_multiset<std::unordered_set<T>> allConsistentDomains;
@@ -348,8 +447,9 @@ namespace csp
 				}
 				usetConsistentDomain.emplace(val);
 			}
+
 			std::vector<T> vecConsistentDomain(usetConsistentDomain.cbegin(), usetConsistentDomain.cend());
-			return vecConsistentDomain;
+			return std::move(vecConsistentDomain);
 		}
 
 		const Assignment<T> getCurrentAssignment() const noexcept
@@ -362,10 +462,10 @@ namespace csp
 					currAssignment.emplace(var, var.getValue());
 				}
 			}
-			return currAssignment;
+			return std::move(currAssignment);
 		}
 
-		void assignFromAssignment(const Assignment<T>& assignment)
+		void assignFromAssignment(const Assignment<T>& assignment) noexcept
 		{
 			for (const std::pair<std::reference_wrapper<Variable<T>>, T>& varToVal : assignment)
 			{
@@ -383,14 +483,14 @@ namespace csp
 		}
 
 		// TODO: write test
-		void assignWithRandomValues(std::optional<std::unordered_set<std::reference_wrapper<Variable<T>>>> optReadOnlyVars = 
+		void assignVarsWithRandomValues(std::optional<std::unordered_set<std::reference_wrapper<Variable<T>>>> optReadOnlyVars = 
 			std::optional<std::unordered_set<std::reference_wrapper<Variable<T>>>>{},
-			std::optional<AssignmentHistory<T>> optAssignmentHistory = std::optional<AssignmentHistory<T>>{})
+			std::optional<AssignmentHistory<T>> optAssignmentHistory = std::optional<AssignmentHistory<T>>{}) noexcept
 		{
 			for (Variable<T>& var : m_vecVariables)
 			{
 				bool varIsAssigned = var.isAssigned();
-				if (varIsAssigned && optReadOnlyVars && optReadOnlyVars.value().count(var))
+				if (varIsAssigned && optReadOnlyVars && (*optReadOnlyVars).count(var))
 				{
 					continue;
 				}
@@ -399,24 +499,24 @@ namespace csp
 					var.unassign();
 					if (optAssignmentHistory)
 					{
-						optAssignmentHistory.value().emplace_back(var, std::optional<T>{});
+						(*optAssignmentHistory).emplace_back(var, std::optional<T>{});
 					}
 				}
 
 				const std::vector<T>& varDomain = var.getDomain();
-				int randIdx = rand() % varDomain.size();
-				T selectedValue = varDomain[randIdx];
+				size_t domainSize = varDomain.size();
+				T selectedValue = __selectElementRandomly<T, std::vector<T>>(varDomain);
 				var.assign(selectedValue);
 				if (optAssignmentHistory)
 				{
-					optAssignmentHistory.value().emplace_back(var, std::optional<T>{selectedValue});
+					(*optAssignmentHistory).emplace_back(var, std::optional<T>{selectedValue});
 				}
 			}
 		}
 
 		const AdjacencListConstraintGraph& getConstraintGraph() const noexcept { return m_umapConstraintGraph; }
 
-		bool isPotentiallySolvable()
+		bool isPotentiallySolvable() noexcept
 		{
 			for (Variable<T>& var : m_vecVariables)
 			{
@@ -459,57 +559,6 @@ namespace csp
 }
 
 
-
-/*
-// https://stackoverflow.com/a/29855973
-template <typename T>
-struct hash<typename vector<T>>
-{
-	size_t operator()(const vector<T>& vec) const
-	{
-		std::hash<T> hasher;
-		size_t seed = 0;
-		for (const T& elem : vec)
-		{
-			seed ^= hasher(elem) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
-		}
-		return seed;
-	}
-};
-*/
-
-/*
-// https://stackoverflow.com/a/29855973
-template <typename T>
-struct hash<typename unordered_set<T>>
-{
-	size_t operator()(const unordered_set<T>& uset) const
-	{
-		std::hash<T> hasher;
-		size_t seed = 0;
-		for (const T& elem : uset)
-		{
-			seed ^= hasher(elem) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
-		}
-		return seed;
-	}
-};
-*/
-
-/*
-template<typename T>
-struct hash_on_sum : private std::hash<typename T::element_type>
-{
-	typedef T::element_type count_type;
-	typedef std::hash<count_type> base;
-	std::size_t operator()(T const& obj) const
-	{
-		return base::operator()(std::accumulate(obj.begin(), obj.end(), count_type()));
-	}
-};
-*/
-
-
 template <typename T>
 struct std::hash<typename std::unordered_set<T>>
 {
@@ -543,15 +592,3 @@ struct std::hash<typename csp::Assignment<T>>
 		return static_cast<size_t>(hashKey);
 	}
 };
-
-/*
-template <typename T>
-struct hash<typename reference_wrapper<Assignment<T>>>
-{
-	size_t operator()(const reference_wrapper<Assignment<T>>& assignment) const
-	{
-		hash<Assignment<T>> assignmentHasher;
-		return assignmentHasher(assignment.get());
-	}
-};
-*/

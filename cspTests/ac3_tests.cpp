@@ -1,7 +1,6 @@
 #include "pch.h"
 #include "CppUnitTest.h"
-#include "arc_consistency_3.h"
-#include "constraint_evaluators.h"
+#include <csp.h>
 
 
 

@@ -54,6 +54,36 @@ namespace cspTests
 			graphColoringProb.unassignAllVariables();
 		}
 
+		// TODO: write better test
+		TEST_METHOD(TestDeepCopy)
+		{
+			std::vector<csp::Variable<std::string>> copiedVars;
+			std::vector<csp::Constraint<std::string>> copiedConstraints;
+			csp::ConstraintProblem<std::string>& copiedGraphColoringProb = graphColoringProb.deepCopy(copiedVars, copiedConstraints);
+			Assert::IsTrue(copiedGraphColoringProb.getVariables().size() == 7);
+			Assert::IsTrue(copiedGraphColoringProb.getConstraints().size() == 10);
+			int twoConstrVarsSizeCounter = 0;
+			int oneConstrVarsSizeCounter = 0;
+			for (const csp::Constraint<std::string>& constr : copiedConstraints)
+			{
+				if (constr.getVariables().size() == 2)
+				{
+					++twoConstrVarsSizeCounter;
+				}
+				else if (constr.getVariables().size() == 1)
+				{
+					++oneConstrVarsSizeCounter;
+				}
+			}
+			Assert::IsTrue(twoConstrVarsSizeCounter == 9);
+			Assert::IsTrue(oneConstrVarsSizeCounter == 1);
+
+			for (const csp::Variable<std::string>& var : copiedVars)
+			{
+				Assert::IsTrue(var.getDomain().size() == 3);
+			}
+		}
+
 		TEST_METHOD(TestIsCompletelyUnassigned)
 		{
 			Assert::IsTrue(graphColoringProb.isCompletelyUnassigned());

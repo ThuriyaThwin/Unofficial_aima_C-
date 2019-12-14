@@ -23,24 +23,23 @@ namespace csp
 			varsAddresses.reserve(variables.size());
 			for (Variable<T>& var : variables)
 			{
-				if (varsAddresses.count(&var) == 1)
+				if (varsAddresses.count(&var))
 				{
 					throw duplicate_variable_error<T>(var);
 				}
 				varsAddresses.insert(&var);
 			}
-			return varsAddresses;
+			return std::move(varsAddresses);
 		}
 
-		const std::unordered_set<Variable<T>*> m_usetVariableAddresses;
-		const VariableRefsVector m_vecVariables;
-		const ConstraintEvaluator m_ceEvaluateConstraint;
-
-		void enforceUnaryConstraint()
+		void enforceUnaryConstraint() noexcept
 		{
 			Variable<T>& var = m_vecVariables.front();
 			const std::vector<T>& vecConsistentDomain = this->getConsistentDomainValues(var);
-			var.setSubsetDomain(vecConsistentDomain);
+			if (vecConsistentDomain.size() < var.getDomain().size())
+			{
+				var.setSubsetDomain(vecConsistentDomain);
+			}
 		}
 
 		void verifyVariableIsContained(Variable<T>& var) const
@@ -51,16 +50,19 @@ namespace csp
 			}
 		}
 
-		std::optional<T> getVariableOptValue(Variable<T>& var) const
+		std::optional<T> getVariableOptValue(Variable<T>& var) const noexcept
 		{
 			std::optional<T> optValue;
 			if (var.isAssigned())
 			{
 				optValue = var.getValue();
 			}
-			return optValue;
+			return std::move(optValue);
 		}
 
+		std::unordered_set<Variable<T>*> m_usetVariableAddresses;
+		VariableRefsVector m_vecVariables;
+		ConstraintEvaluator m_ceEvaluateConstraint;
 
 	public:
 		Constraint() = delete;
@@ -74,13 +76,37 @@ namespace csp
 			}
 		}
 
-		Constraint(Constraint&&) = default;
-		Constraint& operator=(Constraint&&) = default;
-		Constraint(const Constraint&) = default;
-		Constraint& operator=(const Constraint&) = default;
+		// TODO: write test
+		Constraint(const Constraint<T>& otherConstraint) : m_usetVariableAddresses{ otherConstraint.m_usetVariableAddresses },
+			m_vecVariables{ otherConstraint.m_vecVariables }, m_ceEvaluateConstraint{ otherConstraint.m_ceEvaluateConstraint } 
+		{ }
+
+		// TODO: write test
+		Constraint<T>& operator=(const Constraint<T>& otherConstraint)
+		{
+			return *this = Constraint<T>(otherConstraint);
+		}
+
+		// TODO: write test
+		Constraint<T>(Constraint<T>&& otherConstraint) noexcept: 
+			m_usetVariableAddresses{ std::exchange(otherConstraint.m_usetVariableAddresses, std::unordered_set<Variable<T>*>{}) },
+			m_vecVariables{ std::exchange(otherConstraint.m_vecVariables, std::vector<std::reference_wrapper<Variable<T>>>{}) },
+			m_ceEvaluateConstraint{ std::exchange(otherConstraint.m_ceEvaluateConstraint, std::function<bool(const std::vector<T>&)>{}) }
+		{ }
+
+		// TODO: write test
+		Constraint<T>& operator=(Constraint<T>&& otherConstraint) noexcept
+		{
+			std::swap(m_usetVariableAddresses, otherConstraint.m_usetVariableAddresses);
+			std::swap(m_vecVariables, otherConstraint.m_vecVariables);
+			std::swap(m_ceEvaluateConstraint, otherConstraint.m_ceEvaluateConstraint);
+			return *this;
+		}
+
 		~Constraint() = default;
 
 		const VariableRefsVector& getVariables() const noexcept { return m_vecVariables; }
+		const ConstraintEvaluator& getConstraintEvaluator() const noexcept { return m_ceEvaluateConstraint; }
 
 		constexpr bool isCompletelyAssigned() const noexcept
 		{
@@ -152,7 +178,7 @@ namespace csp
 			{
 				var.assign(*optValue);
 			}
-			return consistentDomain;
+			return std::move(consistentDomain);
 		}
 
 		friend std::ostream& operator<<(std::ostream& os, const Constraint<T>& constraint) noexcept
@@ -175,12 +201,12 @@ namespace csp
 			return outStringStream.str();
 		}
 
-		friend bool operator==(const Constraint<T>& left, const Constraint<T>& right)
+		friend bool operator==(const Constraint<T>& left, const Constraint<T>& right) noexcept
 		{
 			return &(left) == &(right);
 		}
 
-		friend bool operator<(const Constraint<T>& left, const Constraint<T>& right)
+		friend bool operator<(const Constraint<T>& left, const Constraint<T>& right) noexcept
 		{
 			return &(left) < &(right);
 		}

@@ -159,13 +159,16 @@
     <ClInclude Include="arc_consistency_4.h" />
     <ClInclude Include="backtracking.h" />
     <ClInclude Include="constraint.h" />
+    <ClInclude Include="constraints_weighting.h" />
     <ClInclude Include="constraint_evaluators.h" />
     <ClInclude Include="constraint_problem.h" />
+    <ClInclude Include="csp.h" />
     <ClInclude Include="domain_sorters.h" />
     <ClInclude Include="forward_checking.h" />
     <ClInclude Include="framework.h" />
     <ClInclude Include="heuristic_backtracking.h" />
-    <ClInclude Include="maintaining arc consistency.h" />
+    <ClInclude Include="hill_climbing.h" />
+    <ClInclude Include="maintaining_arc_consistency.h" />
     <ClInclude Include="min_conflicts.h" />
     <ClInclude Include="path_consistency_2.h" />
     <ClInclude Include="pch.h" />

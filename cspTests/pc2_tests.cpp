@@ -1,7 +1,6 @@
 #include "pch.h"
 #include "CppUnitTest.h"
-#include "path_consistency_2.h"
-#include "constraint_evaluators.h"
+#include <csp.h>
 
 
 

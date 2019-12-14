@@ -1,7 +1,7 @@
 #include "pch.h"
 #include "CppUnitTest.h"
-#include "backtracking.h"
-#include "constraint_evaluators.h"
+
+#include <csp.h>
 
 
 using namespace Microsoft::VisualStudio::CppUnitTestFramework;
@@ -9,7 +9,7 @@ using namespace Microsoft::VisualStudio::CppUnitTestFramework;
 
 namespace cspTests
 {
-	TEST_CLASS(BacktrackingTests)
+	TEST_CLASS(GraphColoringTests)
 	{
 	public:
 
@@ -31,7 +31,7 @@ namespace cspTests
 		csp::ConstraintProblem<std::string> graphColoringProb{ {constr1, constr2, constr3, constr4, constr5, constr6, constr7, constr8,
 			constr9, constr10} };
 
-		TEST_METHOD_INITIALIZE(BacktrackingTestsSetUp)
+		TEST_METHOD_INITIALIZE(GraphColoringTestsSetUp)
 		{
 			graphColoringProb.unassignAllVariables();
 		}
@@ -40,6 +40,46 @@ namespace cspTests
 		{
 			const csp::AssignmentHistory<std::string>& assignmentHistory = csp::backtrackingSolver<std::string>(graphColoringProb);
 			Assert::IsTrue(graphColoringProb.isCompletelyConsistentlyAssigned());
+		}
+
+		TEST_METHOD(TestForwardCheckingHeuristicBacktracking)
+		{
+			const csp::AssignmentHistory<std::string>& assignmentHistory = csp::heuristicBacktrackingSolver<std::string>(graphColoringProb,
+				csp::minimumRemainingValues_primarySelector<std::string>,
+				csp::degreeHeuristic_secondarySelector<std::string>,
+				csp::leastConstrainingValue<std::string>,
+				csp::forwardChecking<std::string>);
+			Assert::IsTrue(graphColoringProb.isCompletelyConsistentlyAssigned());
+		}
+
+		TEST_METHOD(TestMACHeuristicBacktracking)
+		{
+			const csp::AssignmentHistory<std::string>& assignmentHistory = csp::heuristicBacktrackingSolver<std::string>(graphColoringProb,
+				csp::minimumRemainingValues_primarySelector<std::string>,
+				csp::degreeHeuristic_secondarySelector<std::string>,
+				csp::leastConstrainingValue<std::string>,
+				csp::mac<std::string>);
+			Assert::IsTrue(graphColoringProb.isCompletelyConsistentlyAssigned());
+		}
+
+		TEST_METHOD(TestMinConflicts)
+		{
+			const csp::AssignmentHistory<std::string>& assignmentHistory = csp::minConflicts<std::string>(graphColoringProb, 100);
+			Assert::IsTrue(graphColoringProb.isCompletelyConsistentlyAssigned());
+		}
+
+		TEST_METHOD(TestConstraintWeighting)
+		{
+			const csp::AssignmentHistory<std::string>& assignmentHistory = csp::constraintWeighting<std::string>(graphColoringProb, 1000);
+			Assert::IsTrue(graphColoringProb.isCompletelyConsistentlyAssigned());
+		}
+
+		TEST_METHOD(TestHillClimbing)
+		{
+			std::vector<csp::Variable<std::string>> bestVars;
+			std::vector<csp::Constraint<std::string>> bestConstraints;
+			csp::ConstraintProblem<std::string>& bestProb = csp::randomRestartFirstChoiceHillClimbing(graphColoringProb, bestConstraints, bestVars, 100, 100, 100);
+			Assert::IsTrue(bestProb.isCompletelyConsistentlyAssigned());
 		}
 	};
 }

@@ -72,10 +72,19 @@
     <ClInclude Include="path_consistency_2.h">
       <Filter>Header Files\cspPreprocessing</Filter>
     </ClInclude>
-    <ClInclude Include="maintaining arc consistency.h">
+    <ClInclude Include="min_conflicts.h">
+      <Filter>Header Files\cspSolvers</Filter>
+    </ClInclude>
+    <ClInclude Include="csp.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="maintaining_arc_consistency.h">
       <Filter>Header Files\cspInferences</Filter>
     </ClInclude>
-    <ClInclude Include="min_conflicts.h">
+    <ClInclude Include="constraints_weighting.h">
+      <Filter>Header Files\cspSolvers</Filter>
+    </ClInclude>
+    <ClInclude Include="hill_climbing.h">
       <Filter>Header Files\cspSolvers</Filter>
     </ClInclude>
   </ItemGroup>

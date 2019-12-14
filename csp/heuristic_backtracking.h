@@ -18,7 +18,7 @@ namespace csp
 	template <typename T>
 	const AssignmentHistory<T> heuristicBacktrackingSolver(ConstraintProblem<T>& constraintProblem,
 		const PrimarySelector<T>& primarySelector,
-		const SecondarySelector<T>& secondarySelector = csp::chooseFirstCandidateVar_secondarySelector,
+		const SecondarySelector<T>& secondarySelector = chooseFirstCandidateVar_secondarySelector<T>,
 		const std::optional<DomainSorter<T>>& optDomainSorter = std::optional<DomainSorter<T>>{},
 		const std::optional<Inference<T>> optInference = std::optional<Inference<T>>{},
 		bool writeAssignmentHistory = false)
@@ -53,7 +53,7 @@ namespace csp
 		const std::vector<std::reference_wrapper<Variable<T>>>& candidateVars = primarySelector(constraintProblem);
 		Variable<T>& selectedVar = candidateVars.size() == 1 ? candidateVars[0].get() : secondarySelector(constraintProblem, candidateVars);
 
-		const std::vector<T>& sortedDomain = optDomainSorter ? optDomainSorter.value()(constraintProblem, selectedVar) : selectedVar.getDomain();
+		const std::vector<T>& sortedDomain = optDomainSorter ? (*optDomainSorter)(constraintProblem, selectedVar) : selectedVar.getDomain();
 		for (T value : sortedDomain)
 		{
 			selectedVar.assign(value);
@@ -62,7 +62,7 @@ namespace csp
 				assignmentHistory.emplace_back(selectedVar, std::optional<T>{value});
 			}
 
-			if (optInference && optInference.value()(constraintProblem, selectedVar))
+			if (optInference && !((*optInference)(constraintProblem, selectedVar)))
 			{
 				selectedVar.unassign();
 				if (writeAssignmentHistory)
@@ -91,12 +91,12 @@ namespace csp
 	const std::unordered_set<Assignment<T>> heuristicBacktrackingSolver_findAllSolutions(ConstraintProblem<T>& constraintProblem,
 		const PrimarySelector<T>& primarySelector,
 		const SecondarySelector<T>& secondarySelector = csp::chooseFirstCandidateVar_secondarySelector,
-		const std::optional<DomainSorter<T>>& domainSorter = std::optional<DomainSorter<T>>{},
-		const std::optional<Inference<T>> inference = std::optional<Inference<T>>{})
+		const std::optional<DomainSorter<T>>& optDomainSorter = std::optional<DomainSorter<T>>{},
+		const std::optional<Inference<T>> optInference = std::optional<Inference<T>>{})
 	{
 		std::unordered_set<Assignment<T>> solutions;
 		__heuristicBacktrackingSolver_findAllSolutions(constraintProblem, primarySelector, secondarySelector, domainSorter,
-			inference, solutions);
+			optInference, solutions);
 		return solutions;
 	}
 
@@ -104,8 +104,8 @@ namespace csp
 	static void __heuristicBacktrackingSolver_findAllSolutions(ConstraintProblem<T>& constraintProblem,
 		const PrimarySelector<T>& primarySelector,
 		const SecondarySelector<T>& secondarySelector,
-		const std::optional<DomainSorter<T>>& domainSorter,
-		const std::optional<Inference<T>>& inference,
+		const std::optional<DomainSorter<T>>& optDomainSorter,
+		const std::optional<Inference<T>>& optInference,
 		std::unordered_set<Assignment<T>>& solutions)
 	{
 		if (constraintProblem.isCompletelyAssigned())
@@ -120,19 +120,19 @@ namespace csp
 		const std::vector<std::reference_wrapper<Variable<T>>>& candidateVars = primarySelector(constraintProblem);
 		Variable<T>& selectedVar = candidateVars.size() == 1 ? candidateVars[0].get() : secondarySelector(constraintProblem, candidateVars);
 
-		const std::vector<T>& sortedDomain = domainSorter ? domainSorter.value()(constraintProblem, selectedVar) : selectedVar.getDomain();
+		const std::vector<T>& sortedDomain = optDomainSorter ? (*optDomainSorter)(constraintProblem, selectedVar) : selectedVar.getDomain();
 		for (T value : sortedDomain)
 		{
 			selectedVar.assign(value);
 
-			if (inference && inference.value()(constraintProblem, selectedVar))
+			if (optInference && (*optInference)(constraintProblem, selectedVar))
 			{
 				selectedVar.unassign();
 				return;
 			}
 
-			__heuristicBacktrackingSolver_findAllSolutions(constraintProblem, primarySelector, secondarySelector, domainSorter,
-				inference, solutions);
+			__heuristicBacktrackingSolver_findAllSolutions(constraintProblem, primarySelector, secondarySelector, optDomainSorter,
+				optInference, solutions);
 
 			selectedVar.unassign();
 		}

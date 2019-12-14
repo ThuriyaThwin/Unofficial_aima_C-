@@ -15,9 +15,9 @@ namespace csp
 			const std::vector<T>& consistentDomain = constraintProblem.getConsistentDomain(unassignedNeighbor);
 			if (!consistentDomain.size())
 			{
-				return true;
+				return false;
 			}
 		}
-		return false;
+		return true;
 	}
 }

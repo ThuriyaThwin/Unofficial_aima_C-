@@ -9,6 +9,11 @@
 #include "constraint_evaluators.h"
 #include "domain_sorters.h"
 #include "unassigned_variable_selectors.h"
+#include "start_state_genarators.h"
+#include "successor_generators.h"
+#include "score_calculators.h"
+#include "base_genetic_constraint_problem.h"
+#include "general_genetic_constraint_problem.h"
 
 // csp inferences
 #include "forward_checking.h"
@@ -25,3 +30,7 @@
 #include "min_conflicts.h"
 #include "constraints_weighting.h"
 #include "hill_climbing.h"
+#include "simulated_annealing.h"
+#include "general_genetic_constraint_problem.h"
+#include "genetic_local_search.h"
+#include "tree_csp_solver.h"

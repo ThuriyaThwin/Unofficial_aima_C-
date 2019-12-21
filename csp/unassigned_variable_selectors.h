@@ -21,7 +21,7 @@ namespace csp
 		for (Variable<T>& unassignedVar : unassignedVariables)
 		{
 			const std::vector<T>& consistentDomain = constraintProblem.getConsistentDomain(unassignedVar);
-			scoreToVarMap.insert({ consistentDomain.size() , unassignedVar });
+			scoreToVarMap.emplace(consistentDomain.size() , unassignedVar);
 		}
 
 		int smallestConsistentDomainSize = scoreToVarMap.cbegin()->first;
@@ -49,7 +49,7 @@ namespace csp
 		for (Variable<T>& var : candidateVariables)
 		{
 			const std::vector<T>& consistentDomain = constraintProblem.getConsistentDomain(var);
-			scoreToVarMap.insert({ consistentDomain.size() , var });
+			scoreToVarMap.emplace(consistentDomain.size() , var);
 		}
 		return scoreToVarMap.cbegin()->second;
 	}
@@ -62,7 +62,7 @@ namespace csp
 		for (Variable<T>& unassignedVar : unassignedVariables)
 		{
 			const std::vector<std::reference_wrapper<Variable<T>>>& unassignedNeighbors = constraintProblem.getUnassignedNeighbors(unassignedVar);
-			scoreToVarMap.insert({ unassignedNeighbors.size() , unassignedVar });
+			scoreToVarMap.emplace(unassignedNeighbors.size() , unassignedVar);
 		}
 
 		int biggestUnassignedNeighborsSize = scoreToVarMap.crbegin()->first;
@@ -90,7 +90,7 @@ namespace csp
 		for (Variable<T>& var : candidateVariables)
 		{
 			const std::vector<std::reference_wrapper<Variable<T>>>& unassignedNeighbors = constraintProblem.getUnassignedNeighbors(var);
-			scoreToVarMap.insert({ unassignedNeighbors.size() , var });
+			scoreToVarMap.emplace(unassignedNeighbors.size() , var );
 		}
 		return scoreToVarMap.crbegin()->second;
 	}

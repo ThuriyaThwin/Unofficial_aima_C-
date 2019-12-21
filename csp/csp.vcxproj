@@ -166,12 +166,20 @@
     <ClInclude Include="domain_sorters.h" />
     <ClInclude Include="forward_checking.h" />
     <ClInclude Include="framework.h" />
+    <ClInclude Include="general_genetic_constraint_problem.h" />
+    <ClInclude Include="base_genetic_constraint_problem.h" />
+    <ClInclude Include="genetic_local_search.h" />
     <ClInclude Include="heuristic_backtracking.h" />
     <ClInclude Include="hill_climbing.h" />
     <ClInclude Include="maintaining_arc_consistency.h" />
     <ClInclude Include="min_conflicts.h" />
     <ClInclude Include="path_consistency_2.h" />
     <ClInclude Include="pch.h" />
+    <ClInclude Include="score_calculators.h" />
+    <ClInclude Include="simulated_annealing.h" />
+    <ClInclude Include="start_state_genarators.h" />
+    <ClInclude Include="successor_generators.h" />
+    <ClInclude Include="tree_csp_solver.h" />
     <ClInclude Include="unassigned_variable_selectors.h" />
     <ClInclude Include="variable.h" />
   </ItemGroup>

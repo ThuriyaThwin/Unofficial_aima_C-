@@ -87,6 +87,30 @@
     <ClInclude Include="hill_climbing.h">
       <Filter>Header Files\cspSolvers</Filter>
     </ClInclude>
+    <ClInclude Include="simulated_annealing.h">
+      <Filter>Header Files\cspSolvers</Filter>
+    </ClInclude>
+    <ClInclude Include="score_calculators.h">
+      <Filter>Header Files\cspUtil</Filter>
+    </ClInclude>
+    <ClInclude Include="start_state_genarators.h">
+      <Filter>Header Files\cspUtil</Filter>
+    </ClInclude>
+    <ClInclude Include="successor_generators.h">
+      <Filter>Header Files\cspUtil</Filter>
+    </ClInclude>
+    <ClInclude Include="general_genetic_constraint_problem.h">
+      <Filter>Header Files\cspUtil</Filter>
+    </ClInclude>
+    <ClInclude Include="genetic_local_search.h">
+      <Filter>Header Files\cspSolvers</Filter>
+    </ClInclude>
+    <ClInclude Include="base_genetic_constraint_problem.h">
+      <Filter>Header Files\cspUtil</Filter>
+    </ClInclude>
+    <ClInclude Include="tree_csp_solver.h">
+      <Filter>Header Files\cspSolvers</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp">

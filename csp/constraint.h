@@ -76,25 +76,25 @@ namespace csp
 			}
 		}
 
-		// TODO: write test
+		// MEDO: write test
 		Constraint(const Constraint<T>& otherConstraint) : m_usetVariableAddresses{ otherConstraint.m_usetVariableAddresses },
 			m_vecVariables{ otherConstraint.m_vecVariables }, m_ceEvaluateConstraint{ otherConstraint.m_ceEvaluateConstraint } 
 		{ }
 
-		// TODO: write test
+		// MEDO: write test
 		Constraint<T>& operator=(const Constraint<T>& otherConstraint)
 		{
 			return *this = Constraint<T>(otherConstraint);
 		}
 
-		// TODO: write test
-		Constraint<T>(Constraint<T>&& otherConstraint) noexcept: 
-			m_usetVariableAddresses{ std::exchange(otherConstraint.m_usetVariableAddresses, std::unordered_set<Variable<T>*>{}) },
-			m_vecVariables{ std::exchange(otherConstraint.m_vecVariables, std::vector<std::reference_wrapper<Variable<T>>>{}) },
-			m_ceEvaluateConstraint{ std::exchange(otherConstraint.m_ceEvaluateConstraint, std::function<bool(const std::vector<T>&)>{}) }
+		// MEDO: write test
+		Constraint<T>(Constraint<T>&& otherConstraint) noexcept :
+			m_usetVariableAddresses{ std::move(otherConstraint.m_usetVariableAddresses) },
+			m_vecVariables{ std::move(otherConstraint.m_vecVariables) },
+			m_ceEvaluateConstraint{ std::move(otherConstraint.m_ceEvaluateConstraint) }
 		{ }
 
-		// TODO: write test
+		// MEDO: write test
 		Constraint<T>& operator=(Constraint<T>&& otherConstraint) noexcept
 		{
 			std::swap(m_usetVariableAddresses, otherConstraint.m_usetVariableAddresses);

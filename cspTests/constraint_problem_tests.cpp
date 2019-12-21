@@ -54,7 +54,7 @@ namespace cspTests
 			graphColoringProb.unassignAllVariables();
 		}
 
-		// TODO: write better test
+		// MEDO: write better test
 		TEST_METHOD(TestDeepCopy)
 		{
 			std::vector<csp::Variable<std::string>> copiedVars;
@@ -82,6 +82,31 @@ namespace cspTests
 			{
 				Assert::IsTrue(var.getDomain().size() == 3);
 			}
+		}
+		TEST_METHOD(TestMoveCtor)
+		{
+			std::vector<csp::Variable<std::string>> copiedVars;
+			std::vector<csp::Constraint<std::string>> copiedConstraints;
+			csp::ConstraintProblem<std::string>& copiedGraphColoringProb = graphColoringProb.deepCopy(copiedVars, copiedConstraints);
+
+			csp::ConstraintProblem<std::string> movedProb{ std::move(copiedGraphColoringProb) };
+			Assert::IsTrue(copiedGraphColoringProb.getVariables().size() == 0);
+			Assert::IsTrue(copiedGraphColoringProb.getConstraints().size() == 0);
+			Assert::IsTrue(movedProb.getVariables().size() == 7);
+			Assert::IsTrue(movedProb.getConstraints().size() == 10);
+		}
+
+		TEST_METHOD(TestMoveAssignmentOperator)
+		{
+			std::vector<csp::Variable<std::string>> copiedVars;
+			std::vector<csp::Constraint<std::string>> copiedConstraints;
+			csp::ConstraintProblem<std::string>& copiedGraphColoringProb = graphColoringProb.deepCopy(copiedVars, copiedConstraints);
+
+			csp::ConstraintProblem<std::string> movedProb = std::move(copiedGraphColoringProb);
+			Assert::IsTrue(copiedGraphColoringProb.getVariables().size() == 0);
+			Assert::IsTrue(copiedGraphColoringProb.getConstraints().size() == 0);
+			Assert::IsTrue(movedProb.getVariables().size() == 7);
+			Assert::IsTrue(movedProb.getConstraints().size() == 10);
 		}
 
 		TEST_METHOD(TestIsCompletelyUnassigned)
@@ -305,7 +330,7 @@ namespace cspTests
 			{
 				for (const std::pair<std::string, csp::Variable<std::string>>& nameToVar : NameToVarUMap)
 				{
-					if (varToVal.first.get() == nameToVar.second)		//	TODO: here is a bug, it never enters this if.
+					if (varToVal.first.get() == nameToVar.second)		//	MEDO: here is a bug, it never enters this if.
 					{
 						if (nameToVar.first == "wa" || nameToVar.first == "q" || nameToVar.first == "v")
 						{

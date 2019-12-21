@@ -89,7 +89,7 @@ namespace csp
 		constraintProblem.unassignAllVariables();
 		constraintProblem.assignFromAssignment(originalAssignment);
 		const auto& maxReduction = weightToPairMap.rbegin();
-		// TODO: write it in a more readable way
+		// MEDO: write it in a more readable way
 		return { maxReduction->first, maxReduction->second.first, maxReduction->second.second };
 	}
 

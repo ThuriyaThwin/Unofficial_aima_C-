@@ -17,7 +17,7 @@ namespace csp
 		if (optReadOnlyVars && constraintProblem.getVariables().size() <= tabuSize + (*optReadOnlyVars).size() ||
 			constraintProblem.getVariables().size() <= tabuSize)
 		{
-			// TODO: write an exception
+			// MEDO: write an exception
 			throw 1;
 		}
 		

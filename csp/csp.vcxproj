@@ -173,6 +173,7 @@
     <ClInclude Include="hill_climbing.h" />
     <ClInclude Include="maintaining_arc_consistency.h" />
     <ClInclude Include="min_conflicts.h" />
+    <ClInclude Include="naive_cycle_cutset.h" />
     <ClInclude Include="path_consistency_2.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="score_calculators.h" />

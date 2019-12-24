@@ -34,3 +34,4 @@
 #include "general_genetic_constraint_problem.h"
 #include "genetic_local_search.h"
 #include "tree_csp_solver.h"
+#include "naive_cycle_cutset.h"

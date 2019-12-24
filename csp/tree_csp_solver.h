@@ -17,7 +17,7 @@ namespace csp
 			return assignmentHistory;
 		}
 
-		for (size_t i = topologicalySortedUnassginedVars.size() -1; 0 < i; --i)
+		for (size_t i = topologicalySortedUnassginedVars.size() - 1; 0 < i; --i)
 		{
 			Variable<T>& currVariable = topologicalySortedUnassginedVars[i];
 			// MEDO: might be problematic, removing from vector while iterating over it
@@ -25,7 +25,7 @@ namespace csp
 			for (size_t j = 0; j < currDomain.size(); ++j)
 			{
 				currVariable.assign(currDomain[j]);
-				if (constraintProblem.getConsistentDomain(topologicalySortedUnassginedVars[i-1]).empty())
+				if (constraintProblem.getConsistentDomain(topologicalySortedUnassginedVars[i - 1]).empty())
 				{
 					currVariable.removeFromDomain(j);
 				}
@@ -54,7 +54,11 @@ namespace csp
 
 		return assignmentHistory;
 	}
+}
 
+
+namespace csp
+{
 	template <typename T>
 	static const std::vector<std::reference_wrapper<Variable<T>>> __kahnTopologicalSort(ConstraintProblem<T>& constraintProblem)
 	{

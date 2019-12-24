@@ -98,13 +98,13 @@ namespace cspTests
 			csp::ConstraintProblem<std::string>& bestProb = csp::simulatedAnnealing(graphColoringProb, bestConstraints, bestVars, 1000, 0.5, 0.99999);
 		}
 
-		TEST_METHOD(TestGeneralGeneticConstraintProblem)
+		/*TEST_METHOD(TestGeneralGeneticConstraintProblem)
 		{
 			csp::GeneralGeneticConstraintProblem<std::string> graphColoringGeneticProb{ graphColoringProb, 0.1 };
 			csp::geneticLocalSearch(graphColoringGeneticProb, 100, 10, 0.1);
 			csp::ConstraintProblem<std::string>& graphColorProbFromGeneticProb = graphColoringGeneticProb.getConstraintProblem();
 			Assert::IsTrue(graphColorProbFromGeneticProb.isCompletelyConsistentlyAssigned());
-		}
+		}*/
 
 		TEST_METHOD(TestTreeCspSolver)
 		{

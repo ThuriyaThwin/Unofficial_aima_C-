@@ -1,5 +1,7 @@
 #pragma once
 
+#include "pch.h"
+
 // CSPDOs in general:
 // switch syntax of all "constructor(container.cbegin(), container.cend())" to constructor{ container.cbegin(), container.cend() }"
 /* figure out a way to know in compile time whether we should use "for (T val : values)" or "for (const T& val : values).
@@ -11,15 +13,25 @@
 // CSPDOs for c++20:
 // use coroutines in backtracking
 // use wait and notify on atomics in ConstraintProblem<T>::isCompletelyConsistentlyAssigned()
-// use concept fotr T in Variable<T>
+// use a concept for T in Variable<T>
 // make this library a module
 
 
-template <typename T, typename Container>
-T __selectElementRandomly(const Container& containerIn)
+namespace csp
 {
-	Container containerOut;
-	std::sample(containerIn.cbegin(), containerIn.cend(), std::inserter(containerOut, containerOut.end()), 1,
-		std::default_random_engine{ std::random_device{}() });
-	return *(containerOut.cbegin());
+	template <typename U>
+	using Ref = std::reference_wrapper<U>;
+}
+
+
+namespace csp
+{
+	template <typename T, typename Container>
+	T __selectElementRandomly(const Container& containerIn)
+	{
+		Container containerOut;
+		std::sample(containerIn.cbegin(), containerIn.cend(), std::inserter(containerOut, containerOut.end()), 1,
+			std::default_random_engine{ std::random_device{}() });
+		return *(containerOut.cbegin());
+	}
 }

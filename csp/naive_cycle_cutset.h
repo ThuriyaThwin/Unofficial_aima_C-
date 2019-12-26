@@ -105,7 +105,7 @@ namespace csp
 		}
 
 		std::unordered_set<std::reference_wrapper<Variable<T>>> visitedNodes;
-		// MEDO: select root node randomly, cell __isCyclic
+		// CSPDO: select root node randomly, cell __isCyclic
 		
 
 		std::unordered_set<std::reference_wrapper<Variable<T>>> reducedGraphVars;

@@ -171,6 +171,7 @@
     <ClInclude Include="genetic_local_search.h" />
     <ClInclude Include="heuristic_backtracking.h" />
     <ClInclude Include="hill_climbing.h" />
+    <ClInclude Include="initial_definitions.h" />
     <ClInclude Include="maintaining_arc_consistency.h" />
     <ClInclude Include="min_conflicts.h" />
     <ClInclude Include="naive_cycle_cutset.h" />

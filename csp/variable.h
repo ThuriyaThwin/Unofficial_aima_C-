@@ -3,27 +3,7 @@
 #include "pch.h"
 
 
-// MEDOs in general:
-// switch syntax of all "constructor(container.cbegin(), container.cend())" to constructor{ container.cbegin(), container.cend() }"
-/* figure out a way to know in compile time whether we should use "for (T val : values)" or "for (const T& val : values).
-   same goes for functions returning T by-value instead of by reference, like Variabke.getValue() for example. std::is_fundamental might be useful. */
-// allow users to determine it they want the whole assignment history or simply the number of assignments and un-assignments.
-// rewrite various solvers so that they'll output their assignment history.
 
-
-// MEDOs for c++20:
-// use coroutines in backtracking
-// use wait and notify on atomics in ConstraintProblem<T>::isCompletelyConsistentlyAssigned()
-
-
-template <typename T, typename Container>
-T __selectElementRandomly(const Container& containerIn)
-{
-	Container containerOut;
-	std::sample(containerIn.cbegin(), containerIn.cend(), std::inserter(containerOut, containerOut.end()), 1,
-		std::default_random_engine{ std::random_device{}() });
-	return *(containerOut.cbegin());
-}
 
 // https://stackoverflow.com/a/49026811
 template<typename S, typename T, typename = void>
@@ -56,7 +36,7 @@ namespace csp
 		static const std::vector<T> initDomain(const std::unordered_set<T>& domain) noexcept
 		{
 			static_assert(is_to_stream_writable<std::ostream, T>::value);
-			// MEDO: also write an exception 
+			// CSPDO: also write an exception 
 			std::vector<T> vecDomain(domain.cbegin(), domain.cend());
 			return std::move(vecDomain);
 		}
@@ -73,7 +53,7 @@ namespace csp
 			m_vecDomain{ initDomain(domain) }, m_itValue{ m_vecDomain.cend() }, m_itEnd{ m_vecDomain.cend() } { }
 		~Variable<T>() = default;
 
-		// MEDO: write test
+		// CSPDO: write test
 		Variable<T>(const Variable<T>& otherVar): m_vecDomain{ otherVar.m_vecDomain }, m_itEnd{ m_vecDomain.cend() }
 		{
 			if (otherVar.m_itValue == otherVar.m_itEnd)
@@ -86,7 +66,7 @@ namespace csp
 			}
 		}
 
-		// MEDO: write test
+		// CSPDO: write test
 		Variable<T>& operator=(const Variable<T>& otherVar)
 		{
 			return *this = Variable<T>(otherVar);
@@ -96,7 +76,7 @@ namespace csp
 			m_itValue{ std::move(otherVar.m_itValue) }, m_itEnd{ std::move(otherVar.m_itEnd) }
 		{ }
 		
-		// MEDO: write test
+		// CSPDO: write test
 		Variable<T>& operator=(Variable<T>&& otherVar) noexcept
 		{
 			std::swap(m_vecDomain, otherVar.m_vecDomain);

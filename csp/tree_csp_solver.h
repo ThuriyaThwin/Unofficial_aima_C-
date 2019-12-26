@@ -20,7 +20,7 @@ namespace csp
 		for (size_t i = topologicalySortedUnassginedVars.size() - 1; 0 < i; --i)
 		{
 			Variable<T>& currVariable = topologicalySortedUnassginedVars[i];
-			// MEDO: might be problematic, removing from vector while iterating over it
+			// CSPDO: might be problematic, removing from vector while iterating over it
 			const std::vector<T>& currDomain = currVariable.getDomain();
 			for (size_t j = 0; j < currDomain.size(); ++j)
 			{

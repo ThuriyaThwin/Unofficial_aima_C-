@@ -54,7 +54,7 @@ namespace cspTests
 			graphColoringProb.unassignAllVariables();
 		}
 
-		// MEDO: write better test
+		// CSPDO: write better test
 		TEST_METHOD(TestDeepCopy)
 		{
 			std::vector<csp::Variable<std::string>> copiedVars;
@@ -330,7 +330,7 @@ namespace cspTests
 			{
 				for (const std::pair<std::string, csp::Variable<std::string>>& nameToVar : NameToVarUMap)
 				{
-					if (varToVal.first.get() == nameToVar.second)		//	MEDO: here is a bug, it never enters this if.
+					if (varToVal.first.get() == nameToVar.second)		//	CSPDO: here is a bug, it never enters this if.
 					{
 						if (nameToVar.first == "wa" || nameToVar.first == "q" || nameToVar.first == "v")
 						{

@@ -72,7 +72,7 @@ namespace cspTests
 
 		TEST_METHOD(TestMinConflicts)
 		{
-			//	MEDO: test with tabu
+			//	CSPDO: test with tabu
 			const csp::AssignmentHistory<std::string>& assignmentHistory = csp::minConflicts<std::string>(graphColoringProb, 100);
 			Assert::IsTrue(graphColoringProb.isCompletelyConsistentlyAssigned());
 		}

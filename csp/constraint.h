@@ -76,25 +76,25 @@ namespace csp
 			}
 		}
 
-		// MEDO: write test
+		// CSPDO: write test
 		Constraint(const Constraint<T>& otherConstraint) : m_usetVariableAddresses{ otherConstraint.m_usetVariableAddresses },
 			m_vecVariables{ otherConstraint.m_vecVariables }, m_ceEvaluateConstraint{ otherConstraint.m_ceEvaluateConstraint } 
 		{ }
 
-		// MEDO: write test
+		// CSPDO: write test
 		Constraint<T>& operator=(const Constraint<T>& otherConstraint)
 		{
 			return *this = Constraint<T>(otherConstraint);
 		}
 
-		// MEDO: write test
+		// CSPDO: write test
 		Constraint<T>(Constraint<T>&& otherConstraint) noexcept :
 			m_usetVariableAddresses{ std::move(otherConstraint.m_usetVariableAddresses) },
 			m_vecVariables{ std::move(otherConstraint.m_vecVariables) },
 			m_ceEvaluateConstraint{ std::move(otherConstraint.m_ceEvaluateConstraint) }
 		{ }
 
-		// MEDO: write test
+		// CSPDO: write test
 		Constraint<T>& operator=(Constraint<T>&& otherConstraint) noexcept
 		{
 			std::swap(m_usetVariableAddresses, otherConstraint.m_usetVariableAddresses);

@@ -134,20 +134,20 @@ namespace csp
 			m_umapConstraintGraph{ initConstraintGraph(m_umapVariableToConstraints) }, m_umapNameToVariableRef{ umapNameToVariableRef } 
 		{ }
 
-		// MEDO: write test
+		// CSPDO: write test
 		ConstraintProblem<T>(const ConstraintProblem<T>& otherConstrProb): m_vecConstraints{ otherConstrProb.m_vecConstraints },
 			m_umapVariableToConstraints{ otherConstrProb.m_umapVariableToConstraints }, m_vecVariables{ otherConstrProb.m_vecVariables },
 			m_umapConstraintGraph{ otherConstrProb.m_umapConstraintGraph }, m_umapNameToVariableRef{ otherConstrProb.m_umapNameToVariableRef }
 		{ }
 
-		// MEDO: write test
+		// CSPDO: write test
 		ConstraintProblem<T>& operator=(const ConstraintProblem<T>& otherConstrProb)
 		{
 			return *this = ConstraintProblem<T>(otherConstrProb);
 		}
 
 
-		// MEDO: write test
+		// CSPDO: write test
 		ConstraintProblem<T>(ConstraintProblem<T>&& otherConstrProb) noexcept :
 			m_vecConstraints{ std::move(otherConstrProb.m_vecConstraints) },
 			m_umapVariableToConstraints{ std::move(otherConstrProb.m_umapVariableToConstraints) },
@@ -156,7 +156,7 @@ namespace csp
 			m_umapNameToVariableRef{ std::move(otherConstrProb.m_umapNameToVariableRef) }
 		{ }
 
-		// MEDO: write test
+		// CSPDO: write test
 		ConstraintProblem<T>& operator=(ConstraintProblem<T>&& otherConstrProb) noexcept
 		{
 			std::swap(m_vecConstraints, otherConstrProb.m_vecConstraints);
@@ -477,7 +477,7 @@ namespace csp
 			}
 		}
 
-		// MEDO: write test
+		// CSPDO: write test
 		void assignVarsWithRandomValues(std::optional<std::unordered_set<std::reference_wrapper<Variable<T>>>> optReadOnlyVars = 
 			std::optional<std::unordered_set<std::reference_wrapper<Variable<T>>>>{},
 			std::optional<AssignmentHistory<T>> optAssignmentHistory = std::optional<AssignmentHistory<T>>{}) noexcept

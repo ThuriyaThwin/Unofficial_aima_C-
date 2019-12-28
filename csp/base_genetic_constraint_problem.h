@@ -3,6 +3,7 @@
 #include "pch.h"
 #include "constraint_problem.h"
 
+
 namespace csp
 {
 	template <typename T>

@@ -4,8 +4,11 @@
 #include "constraint_problem.h"
 
 
-template <typename T>
-using VariableValueNeighborTriplet = std::tuple<std::reference_wrapper<csp::Variable<T>>, T, std::reference_wrapper<csp::Variable<T>>>;
+namespace csp
+{
+	template <typename T>
+	using VariableValueNeighborTriplet = std::tuple<Ref<csp::Variable<T>>, T, Ref<csp::Variable<T>>>;
+}
 
 
 namespace std
@@ -17,7 +20,7 @@ namespace std
 		{
 			std::hash<T> valueHasher;
 			std::hash<std::reference_wrapper<csp::Variable<T>>> varRefHasher;
-			double hashValue = varRefHasher(get<0>(variableValuePair));
+			double hashValue = static_cast<double>(varRefHasher(get<0>(variableValuePair)));
 			hashValue /= valueHasher(get<1>(variableValuePair));
 			return static_cast<size_t>(hashValue);
 		}
@@ -27,13 +30,13 @@ namespace std
 namespace std
 {
 	template <typename T>
-	struct std::hash<typename VariableValueNeighborTriplet<T>>
+	struct std::hash<typename csp::VariableValueNeighborTriplet<T>>
 	{
-		size_t operator()(const VariableValueNeighborTriplet<T>& variableValueNeighborTriplet) const
+		size_t operator()(const csp::VariableValueNeighborTriplet<T>& variableValueNeighborTriplet) const
 		{
 			std::hash<T> valueHasher;
 			std::hash<std::reference_wrapper<csp::Variable<T>>> varRefHasher;
-			double hashValue = varRefHasher(get<0>(variableValueNeighborTriplet));
+			double hashValue = static_cast<double>(varRefHasher(get<0>(variableValueNeighborTriplet)));
 			hashValue /= valueHasher(get<1>(variableValueNeighborTriplet));
 			hashValue /= varRefHasher(get<2>(variableValueNeighborTriplet));
 			return static_cast<size_t>(hashValue);
@@ -44,12 +47,82 @@ namespace std
 namespace csp
 {
 	template <typename T>
+	static void __initialize_ac4(const std::vector<Ref<Constraint<T>>>& constraints,
+		std::unordered_map<VariableValueNeighborTriplet<T>, int>& supportCounter,
+		std::unordered_map<VariableValuePair<T>, std::unordered_set<VariableValuePair<T>>>& variableValuePairsSupportedBy,
+		std::queue<VariableValuePair<T>>& unsupportedVariableValuePairs)
+	{
+		for (const Constraint<T>& constr : constraints)
+		{
+			const std::vector<Ref<Variable<T>>>& variables = constr.getVariables();
+			if (variables.size() == 1)
+			{
+				continue;
+			}
+			Variable<T>* firstVar = &(variables[0].get());
+			Variable<T>* secondVar = &(variables[1].get());
+
+			for (int i = 0; i < 2; ++i)
+			{
+				bool firstVarWasAssigned = firstVar->isAssigned();
+				const std::vector<T>& firstDomain = firstVar->getDomain();
+
+				for (size_t i = 0; i < firstDomain.size(); ++i)
+				{
+					T firstValue = firstDomain[i];
+					if (!firstVarWasAssigned)
+					{
+						firstVar->assign(firstValue);
+					}
+
+					bool secondVarWasAssigned = secondVar->isAssigned();
+					VariableValuePair<T> firstPair = std::make_pair(std::ref(*firstVar), firstValue);
+					VariableValueNeighborTriplet<T> variableValueNeighborTriplet =
+						std::make_tuple(std::ref(*firstVar), firstValue, std::ref(*secondVar));
+
+					for (T secondValue : secondVar->getDomain())
+					{
+						if (!secondVarWasAssigned)
+						{
+							secondVar->assign(secondValue);
+						}
+						if (constr.isConsistent())
+						{
+							supportCounter.try_emplace(variableValueNeighborTriplet, 0);
+							++supportCounter[variableValueNeighborTriplet];
+							VariableValuePair<T> secondPair = std::make_pair(std::ref(*secondVar), secondValue);
+							variableValuePairsSupportedBy.try_emplace(secondPair, std::unordered_set<VariableValuePair<T>>{});
+							variableValuePairsSupportedBy[secondPair].emplace(firstPair);
+						}
+						if (!secondVarWasAssigned)
+						{
+							secondVar->unassign();
+						}
+					}
+
+					if (!firstVarWasAssigned)
+					{
+						firstVar->unassign();
+					}
+					if (!supportCounter[variableValueNeighborTriplet])
+					{
+						firstVar->removeFromDomain(i);
+						unsupportedVariableValuePairs.emplace(firstPair);
+					}
+				}
+
+				std::swap(firstVar, secondVar);
+			}
+		}
+	}
+
+	template <typename T>
 	bool ac4(ConstraintProblem<T>& constraintProblem)
 	{
 		std::unordered_map<VariableValueNeighborTriplet<T>, int> supportCounter;
 		std::unordered_map<VariableValuePair<T>, std::unordered_set<VariableValuePair<T>>> variableValuePairsSupportedBy;
 		std::queue<VariableValuePair<T>> unsupportedVariableValuePairs;
-		__initialize_ac4(constraintProblem.getConstraints(), supportCounter, variableValuePairsSupportedBy, unsupportedVariableValuePairs);
+		__initialize_ac4<T>(constraintProblem.getConstraints(), supportCounter, variableValuePairsSupportedBy, unsupportedVariableValuePairs);
 
 		while (!unsupportedVariableValuePairs.empty())
 		{
@@ -78,70 +151,5 @@ namespace csp
 		}
 
 		return constraintProblem.isPotentiallySolvable();
-	}
-
-	template <typename T>
-	static void __initialize_ac4(const std::vector<std::reference_wrapper<Constraint<T>>>& constraints,
-		std::unordered_map<VariableValueNeighborTriplet<T>, int>& supportCounter,
-		std::unordered_map<VariableValuePair<T>, std::unordered_set<VariableValuePair<T>>>& variableValuePairsSupportedBy,
-		std::queue<VariableValuePair<T>>& unsupportedVariableValuePairs)
-	{
-		for (const Constraint<T>& constr : constraints)
-		{
-			const std::vector<std::reference_wrapper<Variable<T>>>& variables = constr.getVariables();
-			if (variables.size() == 1)
-			{
-				continue;
-			}
-			Variable<T>* firstVar = &(variables[0].get());
-			Variable<T>* secondVar = &(variables[1].get());
-
-			for (int i = 0; i < 2; ++i)
-			{
-				bool firstVarWasAssigned = firstVar->isAssigned();
-				const std::vector<T>& firstDomain = firstVar->getDomain();
-				for (size_t i = 0; i < firstDomain.size(); ++i)
-				{
-					T firstValue = firstDomain[i];
-					if (!firstVarWasAssigned)
-					{
-						firstVar->assign(firstValue);
-					}
-					bool secondVarWasAssigned = secondVar->isAssigned();
-					VariableValuePair<T> firstPair = std::make_pair(std::ref(*firstVar), firstValue);
-					VariableValueNeighborTriplet<T> variableValueNeighborTriplet = 
-						std::make_tuple(std::ref(*firstVar), firstValue, std::ref(*secondVar));
-					for (T secondValue : secondVar->getDomain())
-					{
-						if (!secondVarWasAssigned)
-						{
-							secondVar->assign(secondValue);
-						}
-						if (constr.isConsistent())
-						{
-							supportCounter.try_emplace(variableValueNeighborTriplet, 0);
-							++supportCounter[variableValueNeighborTriplet];
-							VariableValuePair<T> secondPair = std::make_pair(std::ref(*secondVar), secondValue);
-							variableValuePairsSupportedBy.try_emplace(secondPair, std::unordered_set<VariableValuePair<T>>{});
-							variableValuePairsSupportedBy[secondPair].emplace(firstPair);
-						}
-						if (!secondVarWasAssigned)
-						{
-							secondVar->unassign();
-						}
-					}
-					if (!firstVarWasAssigned)
-					{
-						firstVar->unassign();
-					}
-					if (!supportCounter[variableValueNeighborTriplet])
-					{
-						firstVar->removeFromDomain(i);
-						unsupportedVariableValuePairs.emplace(firstPair);
-					}
-				}
-				std::swap(firstVar, secondVar);
-			}
-		}
 	}
 }

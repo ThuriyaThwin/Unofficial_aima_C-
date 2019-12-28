@@ -1,6 +1,6 @@
 #include "pch.h"
 #include "CppUnitTest.h"
-#include "variable.h"
+#include <csp.h>
 
 
 using namespace Microsoft::VisualStudio::CppUnitTestFramework;
@@ -20,6 +20,49 @@ namespace cspTests
 			var1.unassign();
 		}
 
+		TEST_METHOD(TestCopyCtor)
+		{
+			csp::Variable<double> var2{ usetOriginalDomain };
+			var2.assign(1.0);
+			csp::Variable<double> var4{ var2 };
+			Assert::IsTrue(var2.getValue() == var4.getValue());
+			std::unordered_set<double> var2Domain{ var2.getDomain().cbegin(), var2.getDomain().cend() };
+			std::unordered_set<double> var4Domain{ var4.getDomain().cbegin(), var4.getDomain().cend() };
+			Assert::IsTrue(var2Domain == var4Domain);
+		}
+
+		TEST_METHOD(TestCopyAssignmentOperator)
+		{
+			csp::Variable<double> var2{ usetOriginalDomain };
+			var2.assign(1.0);
+			csp::Variable<double> var3{ {1, 2, 3, 4, 5} };
+			var3.assign(5);
+			var3 = var2;
+			Assert::IsTrue(var3.getDomain().size() == 10);
+			Assert::IsTrue(var3.getValue() == 1.0);
+		}
+
+		TEST_METHOD(TestMoveCtor)
+		{
+			csp::Variable<double> var7{ usetOriginalDomain };
+			var7.assign(1.0);
+			csp::Variable<double> var8{ std::move(var7) };
+			Assert::IsTrue(var7.getDomain().empty());
+			Assert::IsTrue(var8.getDomain().size() == 10);
+			Assert::IsTrue(var8.getValue() == 1.0);
+		}
+
+		TEST_METHOD(TestMoveAssignmentOperator)
+		{
+			csp::Variable<double> var2{ usetOriginalDomain };
+			var2.assign(2.5);
+			csp::Variable<double> var3{ {1, 2, 3, 4, 5} };
+			var3.assign(5);
+			var2 = std::move(var3);
+			Assert::IsTrue(var2.getDomain().size() == 5);
+			Assert::IsTrue(var2.getValue() == 5);
+			Assert::IsTrue(var3.getDomain().size() == 10);
+		}
 		TEST_METHOD(TestAssign)
 		{
 			Assert::IsFalse(var1.isAssigned());

@@ -13,7 +13,7 @@ namespace csp
 	ConstraintProblem<T> generateStartStateRandomly(ConstraintProblem<T>& srcConstraintProblem,
 		std::vector<Variable<T>>& destVars, std::vector<Constraint<T>>& destConstraints)
 	{
-		ConstraintProblem<std::string>& copiedConstraintProb = srcConstraintProblem.deepCopy(destVars, destConstraints);
+		ConstraintProblem<T>& copiedConstraintProb = srcConstraintProblem.deepCopy(destVars, destConstraints);
 		copiedConstraintProb.unassignAllVariables();
 		copiedConstraintProb.assignVarsWithRandomValues();
 		return std::move(copiedConstraintProb);

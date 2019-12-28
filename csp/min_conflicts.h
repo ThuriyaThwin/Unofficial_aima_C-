@@ -4,71 +4,28 @@
 #include "constraint_problem.h"
 
 
+template<typename T>
+class invalid_tabu_size_error : public std::invalid_argument
+{
+public:
+	invalid_tabu_size_error() :
+		invalid_argument{ "Given tabu_size is bigger than the number of variables in the constraint problem or\n"
+			"(tabu_size + read_only_variables_size) is bigger than the number of variables in the constraint problem." }
+	{ }
+};
+
 namespace csp
 {
 	template <typename T>
-	const AssignmentHistory<T> minConflicts(ConstraintProblem<T>& constraintProblem, unsigned int maxSteps,
-		std::optional<std::unordered_set<std::reference_wrapper<Variable<T>>>> optReadOnlyVars =
-		std::optional<std::unordered_set<std::reference_wrapper<Variable<T>>>>{},
-		size_t tabuSize = 0, 
-		bool writeAssignmentHistory = false)
-	{
-		AssignmentHistory<T> assignmentHistory;
-		if (optReadOnlyVars && constraintProblem.getVariables().size() <= tabuSize + (*optReadOnlyVars).size() ||
-			constraintProblem.getVariables().size() <= tabuSize)
-		{
-			// CSPDO: write an exception
-			throw 1;
-		}
-		
-		constraintProblem.assignVarsWithRandomValues(optReadOnlyVars, assignmentHistory);
-
-		size_t bestMinConflicts = constraintProblem.getUnsatisfiedConstraintsSize();
-		const Assignment<T>* bestMinConflictsAssignment = &(constraintProblem.getCurrentAssignment());
-		for (unsigned int i = 0; i < maxSteps; ++i)
-		{
-			if (constraintProblem.isCompletelyConsistentlyAssigned())
-			{
-				return assignmentHistory;	
-			}
-
-			Variable<T>& conflictedVar = __getRandomConflictedVariable(constraintProblem, optReadOnlyVars);
-			conflictedVar.unassign();
-			if (writeAssignmentHistory)
-			{
-				assignmentHistory.emplace_back(conflictedVar, std::optional<T>{});
-			}
-			
-			T minConflictedValue = __getMinConflictedValue<T>(constraintProblem, conflictedVar);
-			conflictedVar.assign(minConflictedValue);
-			if (writeAssignmentHistory)
-			{
-				assignmentHistory.emplace_back(conflictedVar, std::optional<T>{minConflictedValue});
-			}
-
-			size_t currConflictsCount = constraintProblem.getUnsatisfiedConstraintsSize();
-			if (currConflictsCount < bestMinConflicts)
-			{
-				bestMinConflicts = currConflictsCount;
-				bestMinConflictsAssignment = &(constraintProblem.getCurrentAssignment());
-			}
-		}
-
-		constraintProblem.unassignAllVariables();
-		constraintProblem.assignFromAssignment(*bestMinConflictsAssignment);
-		return assignmentHistory;
-	}
-
-	template <typename T>
 	static Variable<T>& __getRandomConflictedVariable(ConstraintProblem<T>& constraintProblem,
-		std::optional<std::unordered_set<std::reference_wrapper<Variable<T>>>> optReadOnlyVars)
+		std::optional<std::unordered_set<Ref<Variable<T>>>> optReadOnlyVars)
 	{
-		const std::vector<std::reference_wrapper<Variable<T>>>& variables = constraintProblem.getVariables();
-		std::unordered_set<std::reference_wrapper<Variable<T>>> conflictedVars;
+		const std::vector<Ref<Variable<T>>>& variables = constraintProblem.getVariables();
+		std::unordered_set<Ref<Variable<T>>> conflictedVars;
 		conflictedVars.reserve(variables.size());
 		for (const Constraint<T>& constr : constraintProblem.getUnsatisfiedConstraints())
 		{
-			const std::vector<std::reference_wrapper<Variable<T>>>& constrVars = constr.getVariables();
+			const std::vector<Ref<Variable<T>>>& constrVars = constr.getVariables();
 			conflictedVars.insert(constrVars.cbegin(), constrVars.cend());
 		}
 		if (optReadOnlyVars)
@@ -86,8 +43,8 @@ namespace csp
 			}
 		}
 
-		Variable<T>& var = 
-			__selectElementRandomly<std::reference_wrapper<Variable<T>>, std::unordered_set<std::reference_wrapper<Variable<T>>>>(conflictedVars);
+		Variable<T>& var =
+			__selectElementRandomly<Ref<Variable<T>>, std::unordered_set<Ref<Variable<T>>>>(conflictedVars);
 		return var;
 	}
 
@@ -116,5 +73,60 @@ namespace csp
 		}
 
 		return __selectElementRandomly<T, std::vector<T>>(minConflictingValues);
+	}
+
+	template <typename T>
+	const AssignmentHistory<T> minConflicts(ConstraintProblem<T>& constraintProblem, unsigned int maxSteps,
+		std::optional<std::unordered_set<Ref<Variable<T>>>> optReadOnlyVars =
+		std::optional<std::unordered_set<Ref<Variable<T>>>>{},
+		size_t tabuSize = 0, 
+		bool writeAssignmentHistory = false)
+	{
+		AssignmentHistory<T> assignmentHistory;
+		if (optReadOnlyVars && constraintProblem.getVariables().size() <= tabuSize + (*optReadOnlyVars).size() ||
+			constraintProblem.getVariables().size() <= tabuSize)
+		{
+			// CSPDO: test it
+			throw invalid_tabu_size_error<T>{};
+		}
+		
+		constraintProblem.assignVarsWithRandomValues(optReadOnlyVars, assignmentHistory);
+
+		size_t bestMinConflicts = constraintProblem.getUnsatisfiedConstraintsSize();
+		Assignment<T>& bestAssignment = const_cast<Assignment<T>&>(constraintProblem.getCurrentAssignment());
+		Assignment<T>* ptrBestAssignment = &(bestAssignment);
+		for (unsigned int i = 0; i < maxSteps; ++i)
+		{
+			if (constraintProblem.isCompletelyConsistentlyAssigned())
+			{
+				return std::move(assignmentHistory);
+			}
+
+			Variable<T>& conflictedVar = __getRandomConflictedVariable<T>(constraintProblem, optReadOnlyVars);
+			conflictedVar.unassign();
+			if (writeAssignmentHistory)
+			{
+				assignmentHistory.emplace_back(conflictedVar, std::optional<T>{});
+			}
+			
+			T minConflictedValue = __getMinConflictedValue<T>(constraintProblem, conflictedVar);
+			conflictedVar.assign(minConflictedValue);
+			if (writeAssignmentHistory)
+			{
+				assignmentHistory.emplace_back(conflictedVar, std::optional<T>{ minConflictedValue });
+			}
+
+			size_t currConflictsCount = constraintProblem.getUnsatisfiedConstraintsSize();
+			if (currConflictsCount < bestMinConflicts)
+			{
+				bestMinConflicts = currConflictsCount;
+				const Assignment<T>& currAssignment = constraintProblem.getCurrentAssignment();
+				*ptrBestAssignment = const_cast<Assignment<T>&>(currAssignment);
+			}
+		}
+
+		constraintProblem.unassignAllVariables();
+		constraintProblem.assignFromAssignment(*ptrBestAssignment);
+		return assignmentHistory;
 	}
 }

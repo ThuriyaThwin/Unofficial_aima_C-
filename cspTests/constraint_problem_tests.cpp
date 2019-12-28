@@ -1,25 +1,9 @@
 #include "pch.h"
 #include "CppUnitTest.h"
-#include "constraint_problem.h"
+#include <csp.h>
 
 
 using namespace Microsoft::VisualStudio::CppUnitTestFramework;
-
-
-bool stringAllDifferent(const std::vector<std::string>& values)
-{
-	std::unordered_set<std::string> seenValues;
-	seenValues.reserve(values.size());
-	for (const std::string& val : values)
-	{
-		if (seenValues.count(val) == 1)
-		{
-			return false;
-		}
-		seenValues.insert(val);
-	}
-	return true;
-}
 
 
 namespace cspTests
@@ -32,16 +16,16 @@ namespace cspTests
 		const std::unordered_set<std::string> names{ "nt", "q", "nsw", "v", "t", "sa", "wa" };
 		std::unordered_map<std::string, csp::Variable<std::string>> NameToVarUMap = csp::Variable<std::string>::constructFromNamesToEqualDomain(names, domain);
 
-		csp::Constraint<std::string> constr1{ {NameToVarUMap.at("sa"), NameToVarUMap.at("wa")}, stringAllDifferent };
-		csp::Constraint<std::string> constr2{ {NameToVarUMap.at("sa"), NameToVarUMap.at("nt")}, stringAllDifferent };
-		csp::Constraint<std::string> constr3{ {NameToVarUMap.at("sa"), NameToVarUMap.at("q")}, stringAllDifferent };
-		csp::Constraint<std::string> constr4{ {NameToVarUMap.at("sa"), NameToVarUMap.at("nsw")}, stringAllDifferent };
-		csp::Constraint<std::string> constr5{ {NameToVarUMap.at("sa"), NameToVarUMap.at("v")}, stringAllDifferent };
-		csp::Constraint<std::string> constr6{ {NameToVarUMap.at("wa"), NameToVarUMap.at("nt")}, stringAllDifferent };
-		csp::Constraint<std::string> constr7{ {NameToVarUMap.at("nt"), NameToVarUMap.at("q")}, stringAllDifferent };
-		csp::Constraint<std::string> constr8{ {NameToVarUMap.at("q"), NameToVarUMap.at("nsw")}, stringAllDifferent };
-		csp::Constraint<std::string> constr9{ {NameToVarUMap.at("nsw"), NameToVarUMap.at("v")}, stringAllDifferent };
-		csp::Constraint<std::string> constr10{ {NameToVarUMap.at("t")}, [](const std::vector<std::string>& values) -> bool {return true; } };
+		csp::Constraint<std::string> constr1{ { NameToVarUMap.at("sa"), NameToVarUMap.at("wa") }, csp::allDiff<std::string> };
+		csp::Constraint<std::string> constr2{ { NameToVarUMap.at("sa"), NameToVarUMap.at("nt") }, csp::allDiff<std::string> };
+		csp::Constraint<std::string> constr3{ { NameToVarUMap.at("sa"), NameToVarUMap.at("q") }, csp::allDiff<std::string> };
+		csp::Constraint<std::string> constr4{ { NameToVarUMap.at("sa"), NameToVarUMap.at("nsw") }, csp::allDiff<std::string> };
+		csp::Constraint<std::string> constr5{ { NameToVarUMap.at("sa"), NameToVarUMap.at("v") }, csp::allDiff<std::string> };
+		csp::Constraint<std::string> constr6{ { NameToVarUMap.at("wa"), NameToVarUMap.at("nt") }, csp::allDiff<std::string> };
+		csp::Constraint<std::string> constr7{ { NameToVarUMap.at("nt"), NameToVarUMap.at("q") }, csp::allDiff<std::string> };
+		csp::Constraint<std::string> constr8{ { NameToVarUMap.at("q"), NameToVarUMap.at("nsw") }, csp::allDiff<std::string> };
+		csp::Constraint<std::string> constr9{ { NameToVarUMap.at("nsw"), NameToVarUMap.at("v") }, csp::allDiff<std::string> };
+		csp::Constraint<std::string> constr10{ { NameToVarUMap.at("t")}, csp::allDiff<std::string> };
 
 		csp::ConstraintProblem<std::string> graphColoringProb{ {constr1, constr2, constr3, constr4, constr5, constr6, constr7, constr8,
 			constr9, constr10} };
@@ -54,9 +38,69 @@ namespace cspTests
 			graphColoringProb.unassignAllVariables();
 		}
 
-		// CSPDO: write better test
+		TEST_METHOD(TestCopyCtor)
+		{
+			std::vector<csp::ConstraintProblem<std::string>> vec;
+			vec.push_back(graphColoringProb);
+			Assert::IsTrue(vec.size() == 1);
+			Assert::IsTrue(vec.back() != graphColoringProb);
+		}
+
+		TEST_METHOD(TestCopyAssignmentOperator)
+		{
+			csp::ConstraintProblem<std::string> constrProb17{ {constr1, constr2, constr3} };
+			constrProb17 = graphColoringProb;
+			Assert::IsTrue(constrProb17.getConstraints().size() == 10);
+		}
+
+		TEST_METHOD(TestMoveCtor)
+		{
+			csp::ConstraintProblem<std::string> constrProb7{ {constr1, constr2, constr3} };
+			csp::ConstraintProblem<std::string> constrProb8{ std::move(constrProb7) };
+			Assert::IsTrue(constrProb7.getVariables().empty());
+			Assert::IsTrue(constrProb7.getConstraints().empty());
+			Assert::IsTrue(constrProb8.getVariables().size() == 4);
+			Assert::IsTrue(constrProb8.getConstraints().size() == 3);
+		}
+
+		TEST_METHOD(TestMoveCtor2)
+		{
+			std::vector<csp::Variable<std::string>> copiedVars;
+			std::vector<csp::Constraint<std::string>> copiedConstraints;
+			csp::ConstraintProblem<std::string> copiedGraphColoringProb = graphColoringProb.deepCopy(copiedVars, copiedConstraints);
+
+			csp::ConstraintProblem<std::string> movedProb{ std::move(copiedGraphColoringProb) };
+			Assert::IsTrue(copiedGraphColoringProb.getVariables().size() == 0);
+			Assert::IsTrue(copiedGraphColoringProb.getConstraints().size() == 0);
+			Assert::IsTrue(movedProb.getVariables().size() == 7);
+			Assert::IsTrue(movedProb.getConstraints().size() == 10);
+		}
+
+		TEST_METHOD(TestMoveAssignmentOperator)
+		{
+			csp::ConstraintProblem<std::string> constrProb13{ {constr1, constr2, constr3} };
+			csp::ConstraintProblem<std::string> constrProb14{ {constr4, constr5, constr6, constr7, constr8, constr9} };
+			constrProb13 = std::move(constrProb14);
+			Assert::IsTrue(constrProb13.getConstraints().size() == 6);
+			Assert::IsTrue(constrProb14.getConstraints().size() == 3);
+		}
+
+		TEST_METHOD(TestMoveAssignmentOperator2)
+		{
+			std::vector<csp::Variable<std::string>> copiedVars;
+			std::vector<csp::Constraint<std::string>> copiedConstraints;
+			csp::ConstraintProblem<std::string>& copiedGraphColoringProb = graphColoringProb.deepCopy(copiedVars, copiedConstraints);
+
+			csp::ConstraintProblem<std::string> movedProb = std::move(copiedGraphColoringProb);
+			Assert::IsTrue(copiedGraphColoringProb.getVariables().size() == 0);
+			Assert::IsTrue(copiedGraphColoringProb.getConstraints().size() == 0);
+			Assert::IsTrue(movedProb.getVariables().size() == 7);
+			Assert::IsTrue(movedProb.getConstraints().size() == 10);
+		}
+
 		TEST_METHOD(TestDeepCopy)
 		{
+			graphColoringProb.assignVarsWithRandomValues();
 			std::vector<csp::Variable<std::string>> copiedVars;
 			std::vector<csp::Constraint<std::string>> copiedConstraints;
 			csp::ConstraintProblem<std::string>& copiedGraphColoringProb = graphColoringProb.deepCopy(copiedVars, copiedConstraints);
@@ -82,31 +126,24 @@ namespace cspTests
 			{
 				Assert::IsTrue(var.getDomain().size() == 3);
 			}
-		}
-		TEST_METHOD(TestMoveCtor)
-		{
-			std::vector<csp::Variable<std::string>> copiedVars;
-			std::vector<csp::Constraint<std::string>> copiedConstraints;
-			csp::ConstraintProblem<std::string>& copiedGraphColoringProb = graphColoringProb.deepCopy(copiedVars, copiedConstraints);
 
-			csp::ConstraintProblem<std::string> movedProb{ std::move(copiedGraphColoringProb) };
-			Assert::IsTrue(copiedGraphColoringProb.getVariables().size() == 0);
-			Assert::IsTrue(copiedGraphColoringProb.getConstraints().size() == 0);
-			Assert::IsTrue(movedProb.getVariables().size() == 7);
-			Assert::IsTrue(movedProb.getConstraints().size() == 10);
-		}
+			for (const csp::Variable<std::string>& varCpy : copiedVars)
+			{
+				for (const csp::Variable<std::string>& varOrg : graphColoringProb.getVariables())
+				{
+					Assert::IsTrue(varCpy != varOrg);
+				}
+			}
 
-		TEST_METHOD(TestMoveAssignmentOperator)
-		{
-			std::vector<csp::Variable<std::string>> copiedVars;
-			std::vector<csp::Constraint<std::string>> copiedConstraints;
-			csp::ConstraintProblem<std::string>& copiedGraphColoringProb = graphColoringProb.deepCopy(copiedVars, copiedConstraints);
+			for (const csp::Constraint<std::string>& constrCpy : copiedConstraints)
+			{
+				for (const csp::Constraint<std::string>& constrOrg : graphColoringProb.getConstraints())
+				{
+					Assert::IsTrue(constrCpy != constrOrg);
+				}
+			}
 
-			csp::ConstraintProblem<std::string> movedProb = std::move(copiedGraphColoringProb);
-			Assert::IsTrue(copiedGraphColoringProb.getVariables().size() == 0);
-			Assert::IsTrue(copiedGraphColoringProb.getConstraints().size() == 0);
-			Assert::IsTrue(movedProb.getVariables().size() == 7);
-			Assert::IsTrue(movedProb.getConstraints().size() == 10);
+			Assert::IsTrue(copiedGraphColoringProb != graphColoringProb);
 		}
 
 		TEST_METHOD(TestIsCompletelyUnassigned)

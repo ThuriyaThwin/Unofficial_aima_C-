@@ -7,11 +7,80 @@
 namespace csp
 {
 	template <typename T>
+	static const std::vector<Ref<Variable<T>>> __kahnTopologicalSort(ConstraintProblem<T>& constraintProblem)
+	{
+		using DirectedGraph = std::unordered_map<Ref<Variable<T>>, std::unordered_set<Ref<Variable<T>>>>;
+		DirectedGraph directedGraph;
+		const std::vector<Ref<Variable<T>>>& variables = constraintProblem.getUnassignedVariables();
+
+		for (Variable<T>& var : variables)
+		{
+			for (Variable<T>& neighbor : constraintProblem.getUnassignedNeighbors(var))
+			{
+				directedGraph.try_emplace(neighbor, std::unordered_set<Ref<Variable<T>>>{});
+				if (!(directedGraph[neighbor].count(var)))
+				{
+					directedGraph.try_emplace(var, std::unordered_set<Ref<Variable<T>>>{});
+					directedGraph[var].emplace(neighbor);
+				}
+			}
+		}
+
+		std::unordered_map<Ref<Variable<T>>, unsigned int> inDegree;
+		for (Variable<T>& var : variables)
+		{
+			inDegree.emplace(var, directedGraph[var].size());
+		}
+
+		std::unordered_set<Ref<Variable<T>>> zeroInDegreeVars;
+		zeroInDegreeVars.reserve(inDegree.size() >> 2);
+		for (const std::pair<Ref<Variable<T>>, unsigned int>& varToInDegree : inDegree)
+		{
+			if (!varToInDegree.second)
+			{
+				zeroInDegreeVars.emplace(varToInDegree.first);
+			}
+		}
+
+		std::vector<Ref<Variable<T>>> topologicalySortedUnassginedVars;
+		topologicalySortedUnassginedVars.reserve(variables.size());
+		while (!zeroInDegreeVars.empty())
+		{
+			const auto& zeroInDegreeVarsItToBegin = zeroInDegreeVars.cbegin();
+			Variable<T>& var = *zeroInDegreeVarsItToBegin;
+			zeroInDegreeVars.erase(zeroInDegreeVarsItToBegin);
+			topologicalySortedUnassginedVars.emplace_back(var);
+			const auto& bar = directedGraph[var];
+			for (Variable<T>& neighbor : directedGraph[var])
+			{
+				--inDegree[neighbor];
+				if (!inDegree[neighbor])
+				{
+					zeroInDegreeVars.emplace(neighbor);
+				}
+			}
+		}
+
+
+		if (topologicalySortedUnassginedVars.size() != variables.size())
+		{
+			return std::move(std::vector<Ref<Variable<T>>>{});
+		}
+		else
+		{
+			return std::move(topologicalySortedUnassginedVars);
+		}
+	}
+}
+
+namespace csp
+{
+	template <typename T>
 	const AssignmentHistory<T> treeCspSolver(ConstraintProblem<T>& constraintProblem, bool writeAssignmentHistory = false)
 	{
 		AssignmentHistory<T> assignmentHistory;
 
-		const std::vector<std::reference_wrapper<Variable<T>>>& topologicalySortedUnassginedVars = __kahnTopologicalSort<T>(constraintProblem);
+		const std::vector<Ref<Variable<T>>>& topologicalySortedUnassginedVars = __kahnTopologicalSort<T>(constraintProblem);
 		if (topologicalySortedUnassginedVars.empty())
 		{
 			return assignmentHistory;
@@ -53,75 +122,5 @@ namespace csp
 		}
 
 		return assignmentHistory;
-	}
-}
-
-
-namespace csp
-{
-	template <typename T>
-	static const std::vector<std::reference_wrapper<Variable<T>>> __kahnTopologicalSort(ConstraintProblem<T>& constraintProblem)
-	{
-		using DirectedGraph = std::unordered_map<std::reference_wrapper<Variable<T>>, std::unordered_set<std::reference_wrapper<Variable<T>>>>;
-		DirectedGraph directedGraph;
-		const std::vector<std::reference_wrapper<Variable<T>>>& variables = constraintProblem.getUnassignedVariables();
-		
-		for (Variable<T>& var : variables)
-		{
-			for (Variable<T>& neighbor : constraintProblem.getUnassignedNeighbors(var))
-			{
-				directedGraph.try_emplace(neighbor, std::unordered_set<std::reference_wrapper<Variable<T>>>{});
-				if (!(directedGraph[neighbor].count(var)))
-				{
-					directedGraph.try_emplace(var, std::unordered_set<std::reference_wrapper<Variable<T>>>{});
-					directedGraph[var].emplace(neighbor);
-				}
-			}
-		}
-
-		std::unordered_map<std::reference_wrapper<Variable<T>>, unsigned int> inDegree;
-		for (Variable<T>& var : variables)
-		{
-			inDegree.emplace(var, directedGraph[var].size());
-		}
-
-		std::unordered_set<std::reference_wrapper<Variable<T>>> zeroInDegreeVars;
-		zeroInDegreeVars.reserve(inDegree.size() >> 2);
-		for (const std::pair<std::reference_wrapper<Variable<T>>, unsigned int>& varToInDegree : inDegree)
-		{
-			if (!varToInDegree.second)
-			{
-				zeroInDegreeVars.emplace(varToInDegree.first);
-			}
-		}
-
-		std::vector<std::reference_wrapper<Variable<T>>> topologicalySortedUnassginedVars;
-		topologicalySortedUnassginedVars.reserve(variables.size());
-		while (!zeroInDegreeVars.empty())
-		{
-			const auto& zeroInDegreeVarsItToBegin = zeroInDegreeVars.cbegin();
-			Variable<T>& var = *zeroInDegreeVarsItToBegin;
-			zeroInDegreeVars.erase(zeroInDegreeVarsItToBegin);
-			topologicalySortedUnassginedVars.emplace_back(var);
-			const auto& bar = directedGraph[var];
-			for (Variable<T>& neighbor : directedGraph[var])
-			{
-				--inDegree[neighbor];
-				if (!inDegree[neighbor])
-				{
-					zeroInDegreeVars.emplace(neighbor);
-				}
-			}
-		}
-
-		
-		if (topologicalySortedUnassginedVars.size() != variables.size())
-		{
-			return std::move(std::vector<std::reference_wrapper<Variable<T>>>{});
-		}
-		else
-		{
-			return std::move(topologicalySortedUnassginedVars);
-		}
 	}
 }

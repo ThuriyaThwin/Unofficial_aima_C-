@@ -21,7 +21,7 @@ namespace csp
 	bool allEqual(const std::vector<T>& assignedValues)
 	{
 		T lastValue = assignedValues.back();
-		for (size_t i = 0; i < assignedValues.size() - 1; ++i)
+		for (size_t i = 0; i < assignedValues.size() - 2; ++i)
 		{
 			if (assignedValues[i] != lastValue)
 			{
@@ -38,11 +38,11 @@ namespace csp
 		seenValues.reserve(assignedValues.size());
 		for (T value : assignedValues)
 		{
-			if (seenValues.count(value) == 1)
+			if (seenValues.count(value))
 			{
 				return false;
 			}
-			seenValues.insert(value);
+			seenValues.emplace(value);
 		}
 		return true;
 	}

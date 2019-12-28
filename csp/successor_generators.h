@@ -13,9 +13,9 @@ namespace csp
 	ConstraintProblem<T> alterRandomVariableValuePair(ConstraintProblem<T>& srcConstraintProblem,
 		std::vector<Variable<T>>& destVars, std::vector<Constraint<T>>& destConstraints)
 	{
-		ConstraintProblem<std::string>& copiedConstraintProb = srcConstraintProblem.deepCopy(destVars, destConstraints);
-		Variable<T>& randomlySelectedVar = __selectElementRandomly<std::reference_wrapper<Variable<T>>,
-			std::vector<std::reference_wrapper<Variable<T>>>>(copiedConstraintProb.getVariables());
+		ConstraintProblem<T>& copiedConstraintProb = srcConstraintProblem.deepCopy(destVars, destConstraints);
+		Variable<T>& randomlySelectedVar = __selectElementRandomly<Ref<Variable<T>>,
+			std::vector<Ref<Variable<T>>>>(copiedConstraintProb.getVariables());
 		std::optional<T> optOldValue;
 		if (randomlySelectedVar.isAssigned())
 		{
@@ -23,7 +23,7 @@ namespace csp
 		}
 		const std::vector<T>& varDomain = randomlySelectedVar.getDomain();
 		T newValue = __selectElementRandomly<T, std::vector<T>>(varDomain);
-		while (optOldValue && newValue == *optOldValue && 1 < varDomain.size())
+		while (1 < varDomain.size() && optOldValue && newValue == *optOldValue)
 		{
 			newValue = __selectElementRandomly<T, std::vector<T>>(varDomain);
 		}

@@ -29,8 +29,8 @@ namespace csp
 		
 		for (unsigned int i = 0; i < maxRestarts; ++i)
 		{
-			std::vector<csp::Variable<std::string>> currVars;
-			std::vector<csp::Constraint<std::string>> currConstrs;
+			std::vector<csp::Variable<T>> currVars;
+			std::vector<csp::Constraint<T>> currConstrs;
 			ConstraintProblem<T>& currConstrProb = generateStartState(*pBestProblem, currVars, currConstrs);
 			ConstraintProblem<T>* pCurrConstrProb = &(currConstrProb);
 			for (unsigned int j = 0; j < maxSteps; ++j)
@@ -54,8 +54,8 @@ namespace csp
 
 				for (unsigned int k = 0; k < maxSuccessors; ++k)
 				{
-					std::vector<csp::Variable<std::string>> successorVars;
-					std::vector<csp::Constraint<std::string>> successorConstrs;
+					std::vector<csp::Variable<T>> successorVars;
+					std::vector<csp::Constraint<T>> successorConstrs;
 					ConstraintProblem<T>& successorProb = generateSuccessor(*pCurrConstrProb, successorVars, successorConstrs);
 					unsigned int successorScore = calculateScore(successorProb);
 					if (currScore < successorScore)

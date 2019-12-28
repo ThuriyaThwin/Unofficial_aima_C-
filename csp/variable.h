@@ -1,26 +1,30 @@
 #pragma once
 
 #include "pch.h"
+#include "initial_utilities.h"
 
-
-
-
-// https://stackoverflow.com/a/49026811
-template<typename S, typename T, typename = void>
-struct is_to_stream_writable : std::false_type
-{ };
-
-template<typename S, typename T>
-struct is_to_stream_writable<S, T, std::void_t<decltype(std::declval<S&>() << std::declval<T>())>> : std::true_type
-{ };
 
 namespace csp
 {
+	// https://stackoverflow.com/a/49026811
+	template<typename S, typename T, typename = void>
+	struct __is_to_stream_writable : std::false_type
+	{ };
+
+	template<typename S, typename T>
+	struct __is_to_stream_writable<S, T, std::void_t<decltype(std::declval<S&>() << std::declval<T>())>> : std::true_type
+	{ };
+}
+
+
+namespace csp
+{
+	template<typename T> class template_argument_T_not_writable_to_cout_error;
 	template<typename T> class unassigned_value_extraction_error;
 	template<typename T> class over_assignment_error;
 	template<typename T> class uncontained_value_error;
 	template<typename T> class domain_alteration_error;
-
+	
 	/*
 	Assumptions on T:
 	1. T has a copy constructor (used in Variable<T>::getValue()).
@@ -33,92 +37,102 @@ namespace csp
 	class Variable final
 	{
 	private:
+		static const size_t UNASSIGNED = std::numeric_limits<size_t>::max();
+
 		static const std::vector<T> initDomain(const std::unordered_set<T>& domain) noexcept
 		{
-			static_assert(is_to_stream_writable<std::ostream, T>::value);
-			// CSPDO: also write an exception 
-			std::vector<T> vecDomain(domain.cbegin(), domain.cend());
+			// CSPDO: test it
+			if constexpr (!__is_to_stream_writable<std::ostream, T>::value)
+			{
+				throw template_argument_T_not_writable_to_cout_error<T>{};
+			}
+
+			std::vector<T> vecDomain{ domain.cbegin(), domain.cend() };
 			return std::move(vecDomain);
 		}
 
-
 		std::vector<T> m_vecDomain;
-		typename std::vector<T>::const_iterator m_itValue;
-		typename std::vector<T>::const_iterator m_itEnd;
-
+		size_t m_valueIdx;
 
 	public:
 		Variable<T>() = delete;
-		Variable<T>(const std::unordered_set<T>& domain):
-			m_vecDomain{ initDomain(domain) }, m_itValue{ m_vecDomain.cend() }, m_itEnd{ m_vecDomain.cend() } { }
+		Variable<T>(const std::unordered_set<T>& domain) :
+			m_vecDomain{ initDomain(domain) }, m_valueIdx{ UNASSIGNED }
+		{ }
+
 		~Variable<T>() = default;
 
-		// CSPDO: write test
-		Variable<T>(const Variable<T>& otherVar): m_vecDomain{ otherVar.m_vecDomain }, m_itEnd{ m_vecDomain.cend() }
-		{
-			if (otherVar.m_itValue == otherVar.m_itEnd)
-			{
-				m_itValue = m_itEnd;
-			}
-			else
-			{
-				m_itValue = std::find(m_vecDomain.cbegin(), m_itEnd, *(otherVar.m_itValue));
-			}
-		}
+		Variable<T>(const Variable<T>& otherVar) : m_vecDomain{ otherVar.m_vecDomain }, m_valueIdx{ otherVar.m_valueIdx }
+		{ }
 
-		// CSPDO: write test
 		Variable<T>& operator=(const Variable<T>& otherVar)
 		{
 			return *this = Variable<T>(otherVar);
 		}
-		
-		Variable<T>(Variable<T>&& otherVar) noexcept : m_vecDomain{ std::move(otherVar.m_vecDomain) },
-			m_itValue{ std::move(otherVar.m_itValue) }, m_itEnd{ std::move(otherVar.m_itEnd) }
+
+		Variable<T>(Variable<T>&& otherVar) noexcept : m_vecDomain{ std::move(otherVar.m_vecDomain) }, m_valueIdx{ otherVar.m_valueIdx }
 		{ }
-		
-		// CSPDO: write test
+
 		Variable<T>& operator=(Variable<T>&& otherVar) noexcept
 		{
 			std::swap(m_vecDomain, otherVar.m_vecDomain);
-			std::swap(m_itValue, otherVar.m_itValue);
-			std::swap(m_itEnd, otherVar.m_itEnd);
+			std::swap(m_valueIdx, otherVar.m_valueIdx);
 			return *this;
 		}
-		
 
-		constexpr bool isAssigned() const noexcept { return m_itValue != m_itEnd; }
+		constexpr bool isAssigned() const noexcept { return m_valueIdx != UNASSIGNED; }
 
 		constexpr T getValue() const
 		{
 			if (!this->isAssigned())
 			{
-				throw unassigned_value_extraction_error<T>(*this);
+				throw unassigned_value_extraction_error<T>{ *this };
 			}
-			return *m_itValue;
+			return m_vecDomain[m_valueIdx];
 		}
 
-		void unassign() noexcept { m_itValue = m_itEnd; }
+		void unassign() noexcept { m_valueIdx = UNASSIGNED; }
 
-		void assign(const T& value)
+		void assign(T val)
 		{
 			if (this->isAssigned())
 			{
-				throw over_assignment_error<T>(*this);
+				throw over_assignment_error<T>{ *this };
 			}
 
-			typename std::vector<T>::const_iterator searchResult = find(m_vecDomain.cbegin(), m_itEnd, value);
-			if (searchResult == m_itEnd)
+			size_t idx = 0;
+			bool isValFound = false;
+			for ( ; idx < m_vecDomain.size(); ++idx)
 			{
-				throw uncontained_value_error<T>(*this, value);
+				if (m_vecDomain[idx] == val)
+				{
+					isValFound = true;
+					break;
+				}
 			}
-			m_itValue = searchResult;
+
+			if (!isValFound)
+			{
+				throw uncontained_value_error<T>{ *this, val };
+			}
+			else
+			{
+				m_valueIdx = idx;
+			}
 		}
 
 		T assignWithRandomlySelectedValue()
 		{
-			T selectedValue = __selectElementRandomly<T, std::vector<T>>(m_vecDomain);
-			this->assign(selectedValue);
-			return selectedValue;
+			if (this->isAssigned())
+			{
+				throw over_assignment_error<T>{ *this };
+			}
+
+			std::random_device randomDevice;
+			std::default_random_engine defaultRandomEngine{ randomDevice() };
+			std::uniform_int_distribution<size_t> zeroToDomainLenDistribution(0, m_vecDomain.size() - 1);
+			m_valueIdx = zeroToDomainLenDistribution(defaultRandomEngine);
+			return m_vecDomain[m_valueIdx];
 		}
 
 		const std::vector<T>& getDomain() const noexcept
@@ -133,30 +147,35 @@ namespace csp
 				throw domain_alteration_error<T>(*this);
 			}
 			m_vecDomain.erase(m_vecDomain.begin() + idx);
-			m_itEnd = m_vecDomain.cend();
-			m_itValue = m_itEnd;
+			m_valueIdx = UNASSIGNED;
 		}
 
 		bool setSubsetDomain(const std::vector<T>& vecSubsetDomain)
 		{
+			bool wasDomainShortened = false;
 			if (this->isAssigned())
 			{
-				throw domain_alteration_error<T>(*this);
+				throw domain_alteration_error<T>{ *this };
 			}
 
-			std::unordered_set<T> usetDomain(m_vecDomain.cbegin(), m_vecDomain.cend());
+			if (m_vecDomain.size() <= vecSubsetDomain.size())
+			{
+				return wasDomainShortened;
+			}
+
+			std::unordered_set<T> usetDomain{ m_vecDomain.cbegin(), m_vecDomain.cend() };
 			for (T value : vecSubsetDomain)
 			{
 				if (!usetDomain.count(value))
 				{
-					return false;
+					return wasDomainShortened;
 				}
 			}
 
 			m_vecDomain = vecSubsetDomain;
-			m_itEnd = m_vecDomain.cend();
-			m_itValue = m_itEnd;
-			return true;
+			m_valueIdx = UNASSIGNED;
+			wasDomainShortened = true;
+			return wasDomainShortened;
 		}
 
 		friend std::ostream& operator<<(std::ostream& os, const Variable<T>& variable) noexcept
@@ -164,7 +183,7 @@ namespace csp
 			os << "(variable's value: ";
 			if (variable.isAssigned())
 			{
-				os << *(variable.m_itValue);
+				os << variable.getValue();
 			}
 			else
 			{
@@ -172,13 +191,13 @@ namespace csp
 			}
 
 			os << ", variable's domain: ";
-			std::string sep = "";
+			char sep = '\0';
 			for (T elem : variable.m_vecDomain)
 			{
 				os << sep << elem;
-				if (sep.empty())
+				if (!sep)
 				{
-					sep = " ";
+					sep = ' ';
 				}
 			}
 			os << ')';
@@ -195,6 +214,11 @@ namespace csp
 		friend bool operator==(const Variable<T>& left, const Variable<T>& right) noexcept
 		{
 			return &(left) == &(right);
+		}
+
+		friend bool operator!=(const Variable<T>& left, const Variable<T>& right) noexcept
+		{
+			return !(left == right);
 		}
 
 		static void constructFromNamesToEqualDomain(std::unordered_map<std::string, Variable<T>>& NameToVarUMap,
@@ -218,12 +242,22 @@ namespace csp
 
 
 	template<typename T>
+	class template_argument_T_not_writable_to_cout_error : public std::invalid_argument
+	{
+	public:
+		template_argument_T_not_writable_to_cout_error() :
+			invalid_argument{ "Given template argument T with the name: " + typeid(T).name() + " is not writable to std::cout." }
+		{ }
+	};
+
+	template<typename T>
 	class unassigned_value_extraction_error : public std::logic_error
 	{
 	public:
 		unassigned_value_extraction_error(const Variable<T>& var) :
-			logic_error("Extracting value of unassigned variable: " + var.toString() +
-				", variable must be assigned for value extraction.") { }
+			logic_error{ "Extracting value of unassigned variable: " + var.toString() +
+				", variable must be assigned for value extraction." }
+		{ }
 	};
 
 
@@ -231,23 +265,27 @@ namespace csp
 	class over_assignment_error : public std::logic_error
 	{
 	public:
-		over_assignment_error(const Variable<T>& var) : logic_error("Over-assignment of an assigned variable: " + var.toString() +
-			", variable must be unassigned before assignment.") { }
+		over_assignment_error(const Variable<T>& var) : 
+			logic_error{ "Over-assignment of an assigned variable: " + var.toString() + 
+			", variable must be unassigned before assignment." }
+		{ }
 	};
 
 	template<typename T>
 	class domain_alteration_error : public std::logic_error
 	{
 	public:
-		domain_alteration_error(const Variable<T>& var) : std::logic_error("Tried to alter domain of assigned variable: " + var.toString() +
-			", variable must be unassigned before domain could be altered.") { }
+		domain_alteration_error(const Variable<T>& var) : 
+			std::logic_error{ "Tried to alter domain of assigned variable: " + var.toString() +
+			", variable must be unassigned before domain could be altered." }
+		{ }
 	};
 
 	template<typename T>
 	class uncontained_value_error : public std::domain_error
 	{
 	private:
-		static const std::string getValueStr(const T& value)
+		static const std::string getValueStr(T value)
 		{
 			std::ostringstream outStringStream;
 			outStringStream << value;
@@ -255,8 +293,10 @@ namespace csp
 		}
 
 	public:
-		uncontained_value_error(const Variable<T>& var, const T& value) : std::domain_error("Cannot assign variable: " + var.toString()
-			+ " with value: " + getValueStr(value) + " since it is not contained in variable's domain.") { }
+		uncontained_value_error(const Variable<T>& var, T value) : 
+			std::domain_error{ "Cannot assign variable: " + var.toString()
+			+ " with value: " + getValueStr(std::forward<T>(value)) + " since it is not contained in variable's domain." }
+		{ }
 	};
 }
 

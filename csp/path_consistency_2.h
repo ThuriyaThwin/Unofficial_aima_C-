@@ -4,52 +4,17 @@
 #include "constraint_problem.h"
 
 
-template <typename T>
-using VarDiffVarNeighborTriplet = std::tuple<std::reference_wrapper<csp::Variable<T>>, std::reference_wrapper<csp::Variable<T>>, 
-	std::reference_wrapper<csp::Variable<T>>>;
+namespace csp
+{
+	template <typename T>
+	using VarDiffVarNeighborTriplet = std::tuple<Ref<csp::Variable<T>>, Ref<csp::Variable<T>>, Ref<csp::Variable<T>>>;
+}
 
 
 namespace csp
 {
 	template <typename T>
-	bool pc2(ConstraintProblem<T>& constraintProblem)
-	{
-		std::queue<VarDiffVarNeighborTriplet<T>> varDiffVarNeighborTriplets;
-		const std::vector<std::reference_wrapper<Variable<T>>>& variables = constraintProblem.getVariables();
-		for (Variable<T>& var : variables)
-		{
-			for (Variable<T>& neighbor : constraintProblem.getNeighbors(var))
-			{
-				std::vector<std::reference_wrapper<Variable<T>>> diffVariables{ variables };
-				__eraseVarAndNeighborFromDiffVariables<T>(diffVariables, var, neighbor);
-				for (Variable<T>& diffVar : diffVariables)
-				{
-					VarDiffVarNeighborTriplet<T> varDiffVarNeighborTri = std::make_tuple(std::ref(var), std::ref(neighbor), std::ref(diffVar));
-					varDiffVarNeighborTriplets.emplace(varDiffVarNeighborTri);
-				}
-			}
-		}
-
-		while (!varDiffVarNeighborTriplets.empty())
-		{
-			const auto& [var, diffVar, neighbor] = varDiffVarNeighborTriplets.front();
-			varDiffVarNeighborTriplets.pop();
-			if (__revise3<T>(constraintProblem, var, diffVar, neighbor))
-			{
-				std::vector<std::reference_wrapper<Variable<T>>> diffVariables{ variables };
-				__eraseVarAndNeighborFromDiffVariables<T>(diffVariables, var, neighbor);
-				for (Variable<T>& diffVar : diffVariables)
-				{
-					varDiffVarNeighborTriplets.emplace(diffVar, var, neighbor);
-					varDiffVarNeighborTriplets.emplace(diffVar, neighbor, var);
-				}
-			}
-		}
-		return constraintProblem.isPotentiallySolvable();
-	}
-
-	template <typename T>
-	static void __eraseVarAndNeighborFromDiffVariables(std::vector<std::reference_wrapper<Variable<T>>>& diffVariables, 
+	static void __eraseVarAndNeighborFromDiffVariables(std::vector<Ref<Variable<T>>>& diffVariables,
 		const Variable<T>& var, const Variable<T>& neighbor)
 	{
 		for (auto it = diffVariables.begin(); it != diffVariables.cend(); )
@@ -64,7 +29,7 @@ namespace csp
 			}
 		}
 	}
-	
+
 	template <typename T>
 	static bool __revise3(ConstraintProblem<T>& constraintProblem, Variable<T>& var, Variable<T>& neighbor, Variable<T>& diffVar)
 	{
@@ -89,6 +54,7 @@ namespace csp
 				{
 					neighbor.assign(neighborDomain[i]);
 				}
+
 				if (!constraintProblem.getConsistentDomain(diffVar).empty())
 				{
 					consistentNeighborValues.emplace_back(neighborDomain[i]);
@@ -98,6 +64,7 @@ namespace csp
 					currRevised = true;
 					anyRevised = true;
 				}
+
 				if (!neighborWasAssigned)
 				{
 					neighbor.unassign();
@@ -108,6 +75,7 @@ namespace csp
 			{
 				var.unassign();
 			}
+
 			if (currRevised)
 			{
 				var.removeFromDomain(i);
@@ -116,4 +84,44 @@ namespace csp
 		}
 		return anyRevised;
 	}
+
+	template <typename T>
+	bool pc2(ConstraintProblem<T>& constraintProblem)
+	{
+		std::queue<VarDiffVarNeighborTriplet<T>> varDiffVarNeighborTriplets;
+		const std::vector<Ref<Variable<T>>>& variables = constraintProblem.getVariables();
+		for (Variable<T>& var : variables)
+		{
+			for (Variable<T>& neighbor : constraintProblem.getNeighbors(var))
+			{
+				std::vector<Ref<Variable<T>>> diffVariables{ variables };
+				__eraseVarAndNeighborFromDiffVariables<T>(diffVariables, var, neighbor);
+				for (Variable<T>& diffVar : diffVariables)
+				{
+					VarDiffVarNeighborTriplet<T> varDiffVarNeighborTri = std::make_tuple(std::ref(var), std::ref(neighbor), std::ref(diffVar));
+					varDiffVarNeighborTriplets.emplace(varDiffVarNeighborTri);
+				}
+			}
+		}
+
+		while (!varDiffVarNeighborTriplets.empty())
+		{
+			const auto& [var, diffVar, neighbor] = varDiffVarNeighborTriplets.front();
+			varDiffVarNeighborTriplets.pop();
+			if (__revise3<T>(constraintProblem, var, diffVar, neighbor))
+			{
+				std::vector<Ref<Variable<T>>> diffVariables{ variables };
+				__eraseVarAndNeighborFromDiffVariables<T>(diffVariables, var, neighbor);
+				for (Variable<T>& diffVar : diffVariables)
+				{
+					varDiffVarNeighborTriplets.emplace(diffVar, var, neighbor);
+					varDiffVarNeighborTriplets.emplace(diffVar, neighbor, var);
+				}
+			}
+		}
+
+		return constraintProblem.isPotentiallySolvable();
+	}
+
+	
 }

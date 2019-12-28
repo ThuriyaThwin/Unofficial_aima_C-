@@ -31,16 +31,16 @@ Ergo a naive algorithm is implemented:
 namespace csp
 {
 	template <typename T>
-	using ConstraintGraph = std::unordered_map<std::reference_wrapper<Variable<T>>, std::vector<std::reference_wrapper<Variable<T>>>>;
+	using ConstraintGraph = std::unordered_map<Ref<Variable<T>>, std::vector<Ref<Variable<T>>>>;
 
 	template <typename T>
 	const AssignmentHistory<T> naiveCycleCutset(ConstraintProblem<T>& constraintProblem, bool writeAssignmentHistory = false)
 	{
 		AssignmentHistory<T> assignmentHistory;
-		const std::vector<std::reference_wrapper<Variable<T>>>& variables = constraintProblem.getUnassignedVariables();
-		const std::vector<std::reference_wrapper<Variable<T>>>& readOnlyVariables = constraintProblem.getAssignedVariables();
-		std::vector<std::reference_wrapper<Constraint<T>>>& constraints = 
-			const_cast<std::vector<std::reference_wrapper<Constraint<T>>>&>(constraintProblem.getConstraints());
+		const std::vector<Ref<Variable<T>>>& variables = constraintProblem.getUnassignedVariables();
+		const std::vector<Ref<Variable<T>>>& readOnlyVariables = constraintProblem.getAssignedVariables();
+		std::vector<Ref<Constraint<T>>>& constraints = 
+			const_cast<std::vector<Ref<Constraint<T>>>&>(constraintProblem.getConstraints());
 		std::sort(constraints.begin(), constraints.end(), 
 			[] (const Constraint<T>& left, const Constraint<T>& right) -> bool
 			{
@@ -53,11 +53,11 @@ namespace csp
 
 		for (size_t i = 1; i < constraints.size(); ++i)
 		{
-			std::vector<std::reference_wrapper<Constraint<T>>> cutSetConstraints{ constraintsItToBegin, constraintsItToBegin + i };
-			std::unordered_set<std::reference_wrapper<Variable<T>>> cutSetVars;
+			std::vector<Ref<Constraint<T>>> cutSetConstraints{ constraintsItToBegin, constraintsItToBegin + i };
+			std::unordered_set<Ref<Variable<T>>> cutSetVars;
 			for (const Constraint<T>& constr : constraints)
 			{
-				const std::vector<std::reference_wrapper<Variable<T>>>& constraintVars = constr.getVariables();
+				const std::vector<Ref<Variable<T>>>& constraintVars = constr.getVariables();
 				cutSetVars.insert(constraintVars.cbegin(), constraintVars.cend());
 			}
 
@@ -68,7 +68,7 @@ namespace csp
 				Variable<T>& var = varToNeighbors.first;
 				if (!cutSetVars.count(var))
 				{
-					reducedGraph.try_emplace(var, std::vector<std::reference_wrapper<Variable<T>>>{});
+					reducedGraph.try_emplace(var, std::vector<Ref<Variable<T>>>{});
 					reducedGraph[var].reserve(constraintGraph.at(var).size());
 					for (Variable<T>& neighbor : varToNeighbors.second)
 					{
@@ -104,15 +104,15 @@ namespace csp
 			return false;
 		}
 
-		std::unordered_set<std::reference_wrapper<Variable<T>>> visitedNodes;
-		// CSPDO: select root node randomly, cell __isCyclic
+		std::unordered_set<Ref<Variable<T>>> visitedNodes;
+		// CSPDO: select root node randomly, call __isCyclic
 		
 
-		std::unordered_set<std::reference_wrapper<Variable<T>>> reducedGraphVars;
+		std::unordered_set<Ref<Variable<T>>> reducedGraphVars;
 		for (const auto& varToNeighbors : reducedGraph)
 		{
 			reducedGraphVars.emplace(varToNeighbors.first);
-			std::unordered_set<std::reference_wrapper<Variable<T>>>& neighbors = varToNeighbors.second;
+			std::unordered_set<Ref<Variable<T>>>& neighbors = varToNeighbors.second;
 			reducedGraph.insert(neighbors.cbegin(), neighbors.cend())
 		}
 
@@ -122,8 +122,8 @@ namespace csp
 
 	template <typename T>
 	static bool __isCyclicGraph(const ConstraintGraph<T>& reducedGraph, 
-		std::unordered_set<std::reference_wrapper<Variable<T>>>& visitedNodes,
-		const Variable<T>& node, std::optional<std::reference_wrapper<Variable<T>>> parent)
+		std::unordered_set<Ref<Variable<T>>>& visitedNodes,
+		const Variable<T>& node, std::optional<Ref<Variable<T>>> parent)
 	{
 		visitedNodes.emplace(node);
 		for (const Variable<T>& neighbor : reducedGraph[node])
@@ -149,9 +149,9 @@ namespace csp
 {
 	template <typename T>
 	static std::vector<Assignment<T>> __getConsistentAssignments(
-		const std::unordered_set<std::reference_wrapper<Variable<T>>>& cutSetVars,
-		const std::vector<std::reference_wrapper<Constraint<T>>>& cutSetConstraints,
-		const std::vector<std::reference_wrapper<Variable<T>>>& readOnlyVariables)
+		const std::unordered_set<Ref<Variable<T>>>& cutSetVars,
+		const std::vector<Ref<Constraint<T>>>& cutSetConstraints,
+		const std::vector<Ref<Variable<T>>>& readOnlyVariables)
 	{
 		std::vector<std::vector<T>> domains;
 		domains.reserve(cutSetVars.size());

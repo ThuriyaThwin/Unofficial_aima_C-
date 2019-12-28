@@ -10,7 +10,7 @@ namespace csp
 	class GeneralGeneticConstraintProblem : public BaseGeneticConstraintProblem<T>
 	{
 	private:
-		std::vector<std::reference_wrapper<Variable<T>>> m_vecReadOnlyVars;
+		std::unordered_set<Ref<Variable<T>>> m_usetReadOnlyVars;
 
 		Assignment<T> reproduce(const Assignment<T>& firstParent, const Assignment<T>& secondParent) const
 		{
@@ -18,7 +18,7 @@ namespace csp
 			std::default_random_engine defaultRandomEngine{ randomDevice() };
 			std::uniform_real_distribution<double> zeroToOneDistribution(0.0, 1.0);
 			Assignment<T> child;
-			for (Variable<T>& var : m_ConstraintProb.getVariables())
+			for (Variable<T>& var : this->m_ConstraintProb.getVariables())
 			{
 				if (zeroToOneDistribution(defaultRandomEngine) < 0.5)
 				{
@@ -40,14 +40,12 @@ namespace csp
 			{
 				return;
 			}
-			const std::vector<std::reference_wrapper<Variable<T>>>& variables = m_ConstraintProb.getVariables();
-			std::vector<std::reference_wrapper<Variable<T>>> varsToBeSampledFrom;
-			varsToBeSampledFrom.reserve(variables.size() - m_vecReadOnlyVars.size());
-			const auto& itToReadOnlyBegin = m_vecReadOnlyVars.cbegin();
-			const auto& itToReadOnlyEnd = m_vecReadOnlyVars.cend();
+			const std::vector<Ref<Variable<T>>>& variables = this->m_ConstraintProb.getVariables();
+			std::vector<Ref<Variable<T>>> varsToBeSampledFrom;
+			varsToBeSampledFrom.reserve(variables.size() - m_usetReadOnlyVars.size());
 			for (Variable<T>& var : variables)
 			{
-				if (std::find(itToReadOnlyBegin, itToReadOnlyEnd, var) != itToReadOnlyEnd)
+				if (m_usetReadOnlyVars.count(var))
 				{
 					continue;
 				}
@@ -56,8 +54,9 @@ namespace csp
 			
 			std::random_device randomDevice;
 			std::default_random_engine randomDefaultEng{ randomDevice() };
-			std::vector<std::reference_wrapper<Variable<T>>> sampledVars;
-			std::sample(varsToBeSampledFrom.cbegin(), varsToBeSampledFrom.cend(), std::back_inserter(sampledVars), numberOfMutations, randomDefaultEng);
+			std::vector<Ref<Variable<T>>> sampledVars;
+			std::sample(varsToBeSampledFrom.cbegin(), varsToBeSampledFrom.cend(), std::back_inserter(sampledVars), 
+				numberOfMutations, randomDefaultEng);
 
 			for (Variable<T>& var : sampledVars)
 			{
@@ -80,13 +79,16 @@ namespace csp
 		GeneralGeneticConstraintProblem<T>() = delete;
 
 		GeneralGeneticConstraintProblem<T>(ConstraintProblem<T>& constrProb, double mutationFraction, 
-			std::vector<std::reference_wrapper<Variable<T>>> readOnlyVars = std::vector<std::reference_wrapper<Variable<T>>>{}) :
-			BaseGeneticConstraintProblem<T>{ constrProb }, m_dMutationFraction{ mutationFraction }, m_vecReadOnlyVars{ readOnlyVars }
+			std::unordered_set<Ref<Variable<T>>> readOnlyVars = std::unordered_set<Ref<Variable<T>>>{}) :
+			BaseGeneticConstraintProblem<T>{ constrProb }, 
+			m_dMutationFraction{ mutationFraction }, 
+			m_usetReadOnlyVars{ readOnlyVars }
 		{ }
 
 		GeneralGeneticConstraintProblem<T>(const GeneralGeneticConstraintProblem<T>& other): 
-			BaseGeneticConstraintProblem<T>{ other.m_ConstraintProb }, m_dMutationFraction{ other.m_dMutationFraction},
-			m_vecReadOnlyVars{ other.m_vecReadOnlyVars }
+			BaseGeneticConstraintProblem<T>{ other.m_ConstraintProb }, 
+			m_dMutationFraction{ other.m_dMutationFraction},
+			m_usetReadOnlyVars{ other.m_usetReadOnlyVars }
 		{ }
 
 		GeneralGeneticConstraintProblem<T>& operator=(const GeneralGeneticConstraintProblem<T>& other)
@@ -97,13 +99,13 @@ namespace csp
 		GeneralGeneticConstraintProblem<T>(GeneralGeneticConstraintProblem<T>&& other) noexcept :
 			BaseGeneticConstraintProblem<T>{ std::move(other.m_ConstraintProb) },
 			m_dMutationFraction{ other.m_dMutationFraction },
-			m_vecReadOnlyVars{ std::move(other.m_vecReadOnlyVars) }
+			m_usetReadOnlyVars{ std::move(other.m_usetReadOnlyVars) }
 		{ }
 
 		GeneralGeneticConstraintProblem<T>& operator=(GeneralGeneticConstraintProblem<T>&& other) noexcept
 		{
-			std::swap(m_ConstraintProb; , other.m_ConstraintProb);
-			std::swap(m_vecReadOnlyVars, other.m_vecReadOnlyVars);
+			std::swap(this->m_ConstraintProb, other.m_ConstraintProb);
+			std::swap(m_usetReadOnlyVars, other.m_usetReadOnlyVars);
 			std::swap(m_dMutationFraction, other.m_dMutationFraction);
 		}
 
@@ -114,20 +116,18 @@ namespace csp
 			/* generating individuals by random assignments. */
 			std::vector<Assignment<T>> population;
 			population.reserve(populationSize);
-			const auto& vecReadOnlyItToBegin = m_vecReadOnlyVars.cbegin();
-			const auto& vecReadOnlyItToEnd = m_vecReadOnlyVars.cend();
 			for (unsigned i = 0; i < populationSize; ++i)
 			{
-				for (Variable<T>& var : m_ConstraintProb.getVariables())
+				for (Variable<T>& var : this->m_ConstraintProb.getVariables())
 				{
-					if (std::find(vecReadOnlyItToBegin, vecReadOnlyItToEnd, var) != vecReadOnlyItToEnd)
+					if (m_usetReadOnlyVars.count(var))
 					{
 						continue;
 					}
 					var.assignWithRandomlySelectedValue();
 				}
-				population.emplace_back(m_ConstraintProb.getCurrentAssignment());
-				m_ConstraintProb.unassignAllVariables();
+				population.emplace_back(this->m_ConstraintProb.getCurrentAssignment());
+				this->m_ConstraintProb.unassignAllVariables();
 			}
 			return std::move(population);
 		}
@@ -135,15 +135,15 @@ namespace csp
 		unsigned int calculateFitness(const Assignment<T>& assignment) override
 		{
 			/* fitness is the number of consistent constraints. */
-			m_ConstraintProb.unassignAllVariables();
-			m_ConstraintProb.assignFromAssignment(assignment);
-			return static_cast<unsigned int>(m_ConstraintProb.getConsistentConstraintsSize());
+			this->m_ConstraintProb.unassignAllVariables();
+			this->m_ConstraintProb.assignFromAssignment(assignment);
+			return static_cast<unsigned int>(this->m_ConstraintProb.getConsistentConstraintsSize());
 		}
 		
 		std::vector<Assignment<T>> performNaturalSelection(std::vector<Assignment<T>>& population) override
 		{
 			/* half truncation selection. */
-			std::multimap<unsigned int, std::reference_wrapper<Assignment<T>>> scoreToIndividualMap;
+			std::multimap<unsigned int, Ref<Assignment<T>>> scoreToIndividualMap;
 			for (Assignment<T>& assignment : population)
 			{
 				scoreToIndividualMap.emplace(this->calculateFitness(assignment), assignment);
@@ -152,8 +152,7 @@ namespace csp
 			std::vector<Assignment<T>> selectedPopulation;
 			size_t trunctedPopulationSize = population.size() >> 1;
 			selectedPopulation.reserve(trunctedPopulationSize);
-			size_t i = 0;
-			for (auto& it = scoreToIndividualMap.crbegin(); i < trunctedPopulationSize; ++i, ++it)
+			for (auto& it = scoreToIndividualMap.crbegin(); 0 < trunctedPopulationSize; --trunctedPopulationSize, ++it)
 			{
 				selectedPopulation.emplace_back(it->second);
 			}
@@ -169,12 +168,11 @@ namespace csp
 			size_t nextGenerationSize = oldGeneration.size() << 1;
 			std::vector<Assignment<T>> nextGeneration;
 			nextGeneration.reserve(nextGenerationSize);
-			for (size_t i = 0; i < nextGenerationSize; ++i)
+			for ( ; 0 < nextGenerationSize; --nextGenerationSize)
 			{
-				std::vector<Assignment<T>> parents;
-				parents.reserve(2);
+				std::vector<Assignment<T>> parents{ 2 };
 				std::sample(oldGeneration.cbegin(), oldGeneration.cend(), std::back_inserter(parents), 2, randomDefaultEng);
-				nextGeneration.emplace_back(this->reproduce(parents[0], parents[1]));
+				nextGeneration.emplace_back(this->reproduce(parents.front(), parents.back()));
 			}
 			return std::move(nextGeneration);
 		}

@@ -1,5 +1,7 @@
 #pragma once
 
+#include "initial_utilities.h"
+
 // csp classes
 #include "variable.h"
 #include "constraint.h"
@@ -34,4 +36,4 @@
 #include "general_genetic_constraint_problem.h"
 #include "genetic_local_search.h"
 #include "tree_csp_solver.h"
-#include "naive_cycle_cutset.h"
+//#include "naive_cycle_cutset.h"

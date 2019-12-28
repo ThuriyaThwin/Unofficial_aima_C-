@@ -114,7 +114,7 @@
     <ClInclude Include="naive_cycle_cutset.h">
       <Filter>Header Files\cspSolvers</Filter>
     </ClInclude>
-    <ClInclude Include="initial_definitions.h">
+    <ClInclude Include="initial_utilities.h">
       <Filter>Header Files\cspUtil</Filter>
     </ClInclude>
   </ItemGroup>

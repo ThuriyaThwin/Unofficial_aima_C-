@@ -30,7 +30,7 @@ namespace csp
 			baseGeneticConstrProb.mutateNextGeneration(nextGeneration, mutationProbability);
 			*pCurrPopulation = std::move(nextGeneration);
 
-			std::multimap<unsigned int, std::reference_wrapper<Assignment<T>>> scoreToIndividualMap;
+			std::multimap<unsigned int, Ref<Assignment<T>>> scoreToIndividualMap;
 			for (Assignment<T>& assignment : *pCurrPopulation)
 			{
 				scoreToIndividualMap.emplace(baseGeneticConstrProb.calculateFitness(assignment), assignment);
@@ -40,7 +40,9 @@ namespace csp
 			if (bestFitness < currBestFitness)
 			{
 				bestFitness = currBestFitness;
-				*pBestIndividual = (scoreToIndividualMap.crbegin()->second).get();
+				Assignment<T>& bestIndividual = scoreToIndividualMap.crbegin()->second;
+				*pBestIndividual = bestIndividual;
+				//*pBestIndividual = (scoreToIndividualMap.crbegin()->second).get();
 			}
 		}
 

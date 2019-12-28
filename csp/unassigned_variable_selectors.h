@@ -8,26 +8,26 @@ namespace csp
 {
 	template <typename T>
 	Variable<T>& chooseFirstCandidateVar_secondarySelector(ConstraintProblem<T>& constraintProblem,
-		const std::vector<std::reference_wrapper<Variable<T>>>& candidateVariables)
+		const std::vector<Ref<Variable<T>>>& candidateVariables)
 	{
-		return candidateVariables[0].get();
+		return candidateVariables.front().get();
 	}
 
 	template <typename T>
-	const std::vector<std::reference_wrapper<Variable<T>>> minimumRemainingValues_primarySelector(ConstraintProblem<T>& constraintProblem)
+	const std::vector<Ref<Variable<T>>> minimumRemainingValues_primarySelector(ConstraintProblem<T>& constraintProblem)
 	{
-		const std::vector<std::reference_wrapper<Variable<T>>>& unassignedVariables = constraintProblem.getUnassignedVariables();
-		std::multimap<int, std::reference_wrapper<Variable<T>>> scoreToVarMap;
+		const std::vector<Ref<Variable<T>>>& unassignedVariables = constraintProblem.getUnassignedVariables();
+		std::multimap<size_t, Ref<Variable<T>>> scoreToVarMap;
 		for (Variable<T>& unassignedVar : unassignedVariables)
 		{
 			const std::vector<T>& consistentDomain = constraintProblem.getConsistentDomain(unassignedVar);
 			scoreToVarMap.emplace(consistentDomain.size() , unassignedVar);
 		}
 
-		int smallestConsistentDomainSize = scoreToVarMap.cbegin()->first;
-		std::vector<std::reference_wrapper<Variable<T>>> variables;
+		size_t smallestConsistentDomainSize = scoreToVarMap.cbegin()->first;
+		std::vector<Ref<Variable<T>>> variables;
 		variables.reserve(scoreToVarMap.size() >> 2);
-		for (const std::pair<int, std::reference_wrapper<Variable<T>>>& scoreToVar : scoreToVarMap)
+		for (const std::pair<size_t, Ref<Variable<T>>>& scoreToVar : scoreToVarMap)
 		{
 			if (scoreToVar.first == smallestConsistentDomainSize)
 			{
@@ -38,14 +38,14 @@ namespace csp
 				break;
 			}
 		}
-		return variables;
+		return std::move(variables);
 	}
 
 	template <typename T>
 	Variable<T>& minimumRemainingValues_secondarySelector(ConstraintProblem<T>& constraintProblem,
-		const std::vector<std::reference_wrapper<Variable<T>>>& candidateVariables)
+		const std::vector<Ref<Variable<T>>>& candidateVariables)
 	{
-		std::multimap<int, std::reference_wrapper<Variable<T>>> scoreToVarMap;
+		std::multimap<size_t, Ref<Variable<T>>> scoreToVarMap;
 		for (Variable<T>& var : candidateVariables)
 		{
 			const std::vector<T>& consistentDomain = constraintProblem.getConsistentDomain(var);
@@ -55,18 +55,18 @@ namespace csp
 	}
 
 	template <typename T>
-	const std::vector<std::reference_wrapper<Variable<T>>> degreeHeuristic_primarySelector(const ConstraintProblem<T>& constraintProblem)
+	const std::vector<Ref<Variable<T>>> degreeHeuristic_primarySelector(const ConstraintProblem<T>& constraintProblem)
 	{
-		const std::vector<std::reference_wrapper<Variable<T>>>& unassignedVariables = constraintProblem.getUnassignedVariables();
-		std::multimap<int, std::reference_wrapper<Variable<T>>> scoreToVarMap;
+		const std::vector<Ref<Variable<T>>>& unassignedVariables = constraintProblem.getUnassignedVariables();
+		std::multimap<size_t, Ref<Variable<T>>> scoreToVarMap;
 		for (Variable<T>& unassignedVar : unassignedVariables)
 		{
-			const std::vector<std::reference_wrapper<Variable<T>>>& unassignedNeighbors = constraintProblem.getUnassignedNeighbors(unassignedVar);
+			const std::vector<Ref<Variable<T>>>& unassignedNeighbors = constraintProblem.getUnassignedNeighbors(unassignedVar);
 			scoreToVarMap.emplace(unassignedNeighbors.size() , unassignedVar);
 		}
 
-		int biggestUnassignedNeighborsSize = scoreToVarMap.crbegin()->first;
-		std::vector<std::reference_wrapper<Variable<T>>> variables;
+		size_t biggestUnassignedNeighborsSize = scoreToVarMap.crbegin()->first;
+		std::vector<Ref<Variable<T>>> variables;
 		variables.reserve(scoreToVarMap.size() >> 2);
 		for (const auto& it = scoreToVarMap.crbegin(); it != scoreToVarMap.crend(); ++it)
 		{
@@ -79,17 +79,17 @@ namespace csp
 				break;
 			}
 		}
-		return variables;
+		return std::move(variables);
 	}
 
 	template <typename T>
 	Variable<T>& degreeHeuristic_secondarySelector(const ConstraintProblem<T>& constraintProblem,
-		const std::vector<std::reference_wrapper<Variable<T>>>& candidateVariables)
+		const std::vector<Ref<Variable<T>>>& candidateVariables)
 	{
-		std::multimap<int, std::reference_wrapper<Variable<T>>> scoreToVarMap;
+		std::multimap<size_t, Ref<Variable<T>>> scoreToVarMap;
 		for (Variable<T>& var : candidateVariables)
 		{
-			const std::vector<std::reference_wrapper<Variable<T>>>& unassignedNeighbors = constraintProblem.getUnassignedNeighbors(var);
+			const std::vector<Ref<Variable<T>>>& unassignedNeighbors = constraintProblem.getUnassignedNeighbors(var);
 			scoreToVarMap.emplace(unassignedNeighbors.size() , var );
 		}
 		return scoreToVarMap.crbegin()->second;

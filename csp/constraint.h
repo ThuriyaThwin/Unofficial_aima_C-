@@ -13,11 +13,8 @@ namespace csp
 	template <typename T>
 	class Constraint final
 	{
-	private:
-		using VariableRefsVector = std::vector<std::reference_wrapper<Variable<T>>>;
-		using ConstraintEvaluator = std::function<bool(const std::vector<T>& assignedValues)>;
-
-		static const std::unordered_set<Variable<T>*> initVariableAddresses(const std::vector<std::reference_wrapper<Variable<T>>>& variables)
+	private:		
+		static const std::unordered_set<Variable<T>*> initVariableAddresses(const std::vector<Ref<Variable<T>>>& variables)
 		{
 			std::unordered_set<Variable<T>*> varsAddresses;
 			varsAddresses.reserve(variables.size());
@@ -32,12 +29,12 @@ namespace csp
 			return std::move(varsAddresses);
 		}
 
-		void enforceUnaryConstraint() noexcept
+		void enforceUnaryConstraint()
 		{
-			Variable<T>& var = m_vecVariables.front();
-			const std::vector<T>& vecConsistentDomain = this->getConsistentDomainValues(var);
-			if (vecConsistentDomain.size() < var.getDomain().size())
+			Variable<T>& var = m_vecVariables.back();
+			if (!var.isAssigned())
 			{
+				const std::vector<T>& vecConsistentDomain = this->getConsistentDomainValues(var);
 				var.setSubsetDomain(vecConsistentDomain);
 			}
 		}
@@ -61,14 +58,16 @@ namespace csp
 		}
 
 		std::unordered_set<Variable<T>*> m_usetVariableAddresses;
-		VariableRefsVector m_vecVariables;
+		std::vector<Ref<Variable<T>>> m_vecVariables;
+		using ConstraintEvaluator = std::function<bool(const std::vector<T>& assignedValues)>;
 		ConstraintEvaluator m_ceEvaluateConstraint;
 
 	public:
 		Constraint() = delete;
-		Constraint(const VariableRefsVector& variables, const ConstraintEvaluator& evaluateConstraint) :
-			m_vecVariables{ variables }, m_ceEvaluateConstraint{ evaluateConstraint },
-			m_usetVariableAddresses{ initVariableAddresses(variables) } 
+		Constraint(const std::vector<Ref<Variable<T>>>& variables, const ConstraintEvaluator& evaluateConstraint) :
+			m_usetVariableAddresses{ initVariableAddresses(variables) },
+			m_vecVariables{ variables }, 
+			m_ceEvaluateConstraint{ evaluateConstraint }
 		{
 			if (m_vecVariables.size() == 1)
 			{
@@ -76,25 +75,23 @@ namespace csp
 			}
 		}
 
-		// CSPDO: write test
-		Constraint(const Constraint<T>& otherConstraint) : m_usetVariableAddresses{ otherConstraint.m_usetVariableAddresses },
-			m_vecVariables{ otherConstraint.m_vecVariables }, m_ceEvaluateConstraint{ otherConstraint.m_ceEvaluateConstraint } 
+		Constraint(const Constraint<T>& otherConstraint) : 
+			m_usetVariableAddresses{ otherConstraint.m_usetVariableAddresses },
+			m_vecVariables{ otherConstraint.m_vecVariables }, 
+			m_ceEvaluateConstraint{ otherConstraint.m_ceEvaluateConstraint }
 		{ }
 
-		// CSPDO: write test
 		Constraint<T>& operator=(const Constraint<T>& otherConstraint)
 		{
 			return *this = Constraint<T>(otherConstraint);
 		}
 
-		// CSPDO: write test
 		Constraint<T>(Constraint<T>&& otherConstraint) noexcept :
 			m_usetVariableAddresses{ std::move(otherConstraint.m_usetVariableAddresses) },
 			m_vecVariables{ std::move(otherConstraint.m_vecVariables) },
 			m_ceEvaluateConstraint{ std::move(otherConstraint.m_ceEvaluateConstraint) }
 		{ }
 
-		// CSPDO: write test
 		Constraint<T>& operator=(Constraint<T>&& otherConstraint) noexcept
 		{
 			std::swap(m_usetVariableAddresses, otherConstraint.m_usetVariableAddresses);
@@ -105,7 +102,7 @@ namespace csp
 
 		~Constraint() = default;
 
-		const VariableRefsVector& getVariables() const noexcept { return m_vecVariables; }
+		const std::vector<Ref<Variable<T>>>& getVariables() const noexcept { return m_vecVariables; }
 		const ConstraintEvaluator& getConstraintEvaluator() const noexcept { return m_ceEvaluateConstraint; }
 
 		constexpr bool isCompletelyAssigned() const noexcept
@@ -206,6 +203,11 @@ namespace csp
 			return &(left) == &(right);
 		}
 
+		friend bool operator!=(const Constraint<T>& left, const Constraint<T>& right) noexcept
+		{
+			return !(left == right);
+		}
+
 		friend bool operator<(const Constraint<T>& left, const Constraint<T>& right) noexcept
 		{
 			return &(left) < &(right);
@@ -217,7 +219,9 @@ namespace csp
 	class duplicate_variable_error : public std::domain_error
 	{
 	public:
-		duplicate_variable_error(const Variable<T>& var) : std::domain_error(var.toString() + " is duplicate in input variables vector.") { }
+		duplicate_variable_error(const Variable<T>& var) : 
+			std::domain_error{ var.toString() + " is duplicate in input variables vector." }
+		{ }
 	};
 
 	template<typename T>
@@ -225,7 +229,9 @@ namespace csp
 	{
 	public:
 		uncontained_variable_error(const Constraint<T>& constr, const Variable<T>& var) :
-			std::domain_error("Cannot return consistent domain of " + var.toString() + " since it's not contained in\n" + constr.toString()) { }
+			std::domain_error{ "Cannot return consistent domain of " + var.toString() + " since it's not contained in\n" 
+			+ constr.toString() }
+		{ }
 	};
 }
 

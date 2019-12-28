@@ -4,16 +4,18 @@
 #include "constraint_problem.h"
 
 
-template <typename T>
-using VariableRefsPair = std::pair<std::reference_wrapper<csp::Variable<T>>, std::reference_wrapper<csp::Variable<T>>>;
-
+namespace csp
+{
+	template <typename T>
+	using VariableRefsPair = std::pair<Ref<csp::Variable<T>>, Ref<csp::Variable<T>>>;
+}
 
 namespace std
 {
 	template <typename T>
-	struct std::hash<typename VariableRefsPair<T>>
+	struct std::hash<typename csp::VariableRefsPair<T>>
 	{
-		size_t operator()(const VariableRefsPair<T>& variableRefsPair) const
+		size_t operator()(const csp::VariableRefsPair<T>& variableRefsPair) const
 		{
 			std::hash<std::reference_wrapper<csp::Variable<T>>> varHasher;
 			double firstVarHashValue = static_cast<double>(varHasher(variableRefsPair.first));
@@ -24,6 +26,78 @@ namespace std
 	};
 }
 
+
+namespace csp
+{
+	template <typename T>
+	static void __eraseUnassignedNeighborFromNeighbors(std::vector<Ref<Variable<T>>>& neighbors, Variable<T>& unassignedNeighbor)
+	{
+		for (auto it = neighbors.cbegin(); it != neighbors.cend(); ++it)
+		{
+			if ((*it).get() == unassignedNeighbor)
+			{
+				neighbors.erase(it);
+				return;
+			}
+		}
+	}
+
+	template <typename T>
+	static std::optional<Constraint<T>> __findSharedConstraint(const std::vector<Ref<Constraint<T>>>& firstVariableConstraints,
+		const std::vector<Ref<Constraint<T>>>& secondVariableConstraints)
+	{
+		std::optional<Constraint<T>> sharedConstr;
+		size_t firstSize = firstVariableConstraints.size();
+		size_t secondSize = secondVariableConstraints.size();
+		const std::vector<Ref<Constraint<T>>>& shorterVec = firstSize <= secondSize ? firstVariableConstraints : secondVariableConstraints;
+		const std::vector<Ref<Constraint<T>>>& longerVec = firstSize <= secondSize ? secondVariableConstraints : firstVariableConstraints;
+		bool notFoundSharedConstraint = true;
+
+		for (auto it = shorterVec.begin(); it != shorterVec.end() && notFoundSharedConstraint; ++it)
+		{
+			for (Constraint<T>& constrOfLonger : longerVec)
+			{
+				if (*it == constrOfLonger)
+				{
+					sharedConstr = (*it).get();
+					notFoundSharedConstraint = false;
+					break;
+				}
+			}
+		}
+		return sharedConstr;
+	}
+
+	template <typename T>
+	static bool __revise(ConstraintProblem<T>& constraintProblem, Variable<T>& variable, Variable<T>& neighbor)
+	{
+		if (variable.isAssigned())
+		{
+			return false;
+		}
+		bool revised = false;
+		const std::vector<Ref<Constraint<T>>>& variableConstraints = constraintProblem.getConstraintsContainingVariable(variable);
+		const std::vector<Ref<Constraint<T>>>& neighborConstraints = constraintProblem.getConstraintsContainingVariable(neighbor);
+		std::optional<Constraint<T>>& optSharedConstr = __findSharedConstraint<T>(variableConstraints, neighborConstraints);
+		if (optSharedConstr)
+		{
+			Constraint<T>& sharedConstraint = *optSharedConstr;
+			const std::vector<T>& variableDomain = variable.getDomain();
+			for (size_t i = 0; i < variableDomain.size(); ++i)
+			{
+				variable.assign(variableDomain[i]);
+				if (sharedConstraint.getConsistentDomainValues(neighbor).empty())
+				{
+					variable.unassign();
+					variable.removeFromDomain(i);
+					revised = true;
+				}
+				variable.unassign();
+			}
+		}
+		return revised;
+	}
+}
 
 
 namespace csp
@@ -43,8 +117,8 @@ namespace csp
 					return false;
 				}
 
-				std::vector<std::reference_wrapper<Variable<T>>>& neighbors =
-					const_cast<std::vector<std::reference_wrapper<Variable<T>>>&>(constraintProblem.getNeighbors(unassignedVar));
+				std::vector<Ref<Variable<T>>>& neighbors =
+					const_cast<std::vector<Ref<Variable<T>>>&>(constraintProblem.getNeighbors(unassignedVar));
 				__eraseUnassignedNeighborFromNeighbors<T>(neighbors, unassignedNeighbor.get());
 
 				if (!neighbors.empty())
@@ -64,7 +138,7 @@ namespace csp
 	std::unordered_set<VariableRefsPair<T>> initArcsAC3(ConstraintProblem<T>& constraintProblem)
 	{
 		std::unordered_set<VariableRefsPair<T>> arcs;
-		const std::vector<std::reference_wrapper<Variable<T>>>& unassignedVars = constraintProblem.getUnassignedVariables();
+		const std::vector<Ref<Variable<T>>>& unassignedVars = constraintProblem.getUnassignedVariables();
 		arcs.reserve(unassignedVars.size());
 		for (Variable<T>& unassignedVar : unassignedVars)
 		{
@@ -73,75 +147,6 @@ namespace csp
 				arcs.emplace(unassignedVar, unassignedNeighbor);
 			}
 		}
-		return arcs;
-	}
-
-	template <typename T>
-	static void __eraseUnassignedNeighborFromNeighbors(std::vector<std::reference_wrapper<Variable<T>>>& neighbors, Variable<T>& unassignedNeighbor)
-	{
-		for (auto it = neighbors.cbegin(); it != neighbors.cend(); ++it)
-		{
-			if ((*it).get() == unassignedNeighbor)
-			{
-				neighbors.erase(it);
-				return;
-			}
-		}
-	}
-
-	template <typename T>
-	static std::optional<std::reference_wrapper<Constraint<T>>> __findSharedConstraint(const std::vector<std::reference_wrapper<Constraint<T>>>& firstVariableConstraints,
-		const std::vector<std::reference_wrapper<Constraint<T>>>& secondVariableConstraints)
-	{
-		std::optional<std::reference_wrapper<Constraint<T>>> sharedConstr;
-		size_t firstSize = firstVariableConstraints.size();
-		size_t secondSize = secondVariableConstraints.size();
-		const std::vector<std::reference_wrapper<Constraint<T>>>& shorterVec = firstSize <= secondSize ? firstVariableConstraints : secondVariableConstraints;
-		const std::vector<std::reference_wrapper<Constraint<T>>>& longerVec = firstSize <= secondSize ? secondVariableConstraints : firstVariableConstraints;
-		bool notFoundSharedConstraint = true;
-
-		for (auto it = shorterVec.begin(); it != shorterVec.end() && notFoundSharedConstraint; ++it)
-		{
-			for (Constraint<T>& constrOfLonger : longerVec)
-			{
-				if (*it == constrOfLonger)
-				{
-					sharedConstr = *it;
-					notFoundSharedConstraint = false;
-					break;
-				}
-			}
-		}
-		return sharedConstr;
-	}
-
-	template <typename T>
-	static bool __revise(ConstraintProblem<T>& constraintProblem, Variable<T>& variable, Variable<T>& neighbor)
-	{
-		if (variable.isAssigned())
-		{
-			return false;
-		}
-		bool revised = false;
-		const std::vector<std::reference_wrapper<Constraint<T>>>& variableConstraints = constraintProblem.getConstraintsContainingVariable(variable);
-		const std::vector<std::reference_wrapper<Constraint<T>>>& neighborConstraints = constraintProblem.getConstraintsContainingVariable(neighbor);
-		std::optional<std::reference_wrapper<Constraint<T>>>& optSharedConstr = __findSharedConstraint<T>(variableConstraints, neighborConstraints);
-		if (optSharedConstr)
-		{
-			Constraint<T>& sharedConstraint = *optSharedConstr;
-			const std::vector<T>& variableDomain = variable.getDomain();
-			for (size_t i = 0; i < variableDomain.size(); ++i)
-			{
-				variable.assign(variableDomain[i]);
-				if (sharedConstraint.getConsistentDomainValues(neighbor).empty())
-				{
-					variable.unassign();
-					variable.removeFromDomain(i);
-					revised = true;
-				}
-				variable.unassign();
-			}
-		}
-		return revised;
+		return std::move(arcs);
 	}
 }

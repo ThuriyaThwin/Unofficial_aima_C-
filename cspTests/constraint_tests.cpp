@@ -1,6 +1,6 @@
 #include "pch.h"
 #include "CppUnitTest.h"
-#include "constraint.h"
+#include <csp.h>
 
 
 using namespace Microsoft::VisualStudio::CppUnitTestFramework;
@@ -69,6 +69,40 @@ namespace cspTests
 			var1.unassign();
 			var2.unassign();
 			var3.unassign();
+		}
+
+		TEST_METHOD(TestCopyCtor)
+		{
+			std::vector<csp::Constraint<double>> vec;
+			csp::Constraint<double> constraint5{ vars, doubleAllEqual };
+			vec.push_back(constraint5);
+			Assert::IsTrue(vec.size() == 1);
+			Assert::IsTrue(vec.back() != constraint5);
+		}
+
+		TEST_METHOD(TestCopyAssignmentOperator)
+		{
+			csp::Constraint<double> constraint5{ vars, doubleAllEqual };
+			csp::Constraint<double> constraint6{ vars7, doubleAllEqual };
+			constraint5 = constraint6;
+			Assert::IsTrue(constraint5.getVariables().size() == 1);
+		}
+
+		TEST_METHOD(TestMoveCtor)
+		{
+			csp::Constraint<double> constraint7{ vars, doubleAllEqual };
+			csp::Constraint<double> constraint8{ std::move(constraint7) };
+			Assert::IsTrue(constraint7.getVariables().empty());
+			Assert::IsTrue(constraint8.getVariables().size() == 3);
+		}
+
+		TEST_METHOD(TestMoveAssignmentOperator)
+		{
+			csp::Constraint<double> constraint5{ vars, doubleAllEqual };
+			csp::Constraint<double> constraint6{ vars7, doubleAllEqual };
+			constraint5 = std::move(constraint6);
+			Assert::IsTrue(constraint5.getVariables().size() == 1);
+			Assert::IsTrue(constraint6.getVariables().size() == 3);
 		}
 
 		TEST_METHOD(TestgetVariables)

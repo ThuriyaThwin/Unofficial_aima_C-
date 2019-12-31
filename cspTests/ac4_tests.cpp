@@ -111,18 +111,18 @@ namespace cspTests
 			Assert::IsTrue(ac4Res);
 			for (const csp::Variable<int>& var : constProb2.getVariables())
 			{
-				const auto& oneFindRes = std::find(var.getDomain().cbegin(), var.getDomain().cend(), 1);
+				const auto oneFindRes = std::find(var.getDomain().cbegin(), var.getDomain().cend(), 1);
 				if (oneFindRes != var.getDomain().cend())
 				{
-					const auto& twoFindRes = std::find(var.getDomain().cbegin(), var.getDomain().cend(), 2);
+					const auto twoFindRes = std::find(var.getDomain().cbegin(), var.getDomain().cend(), 2);
 					Assert::IsTrue(twoFindRes != var.getDomain().cend());
 				}
 				else
 				{
-					const auto& threeFindRes = std::find(var.getDomain().cbegin(), var.getDomain().cend(), 3);
+					const auto threeFindRes = std::find(var.getDomain().cbegin(), var.getDomain().cend(), 3);
 					if (threeFindRes != var.getDomain().cend())
 					{
-						const auto& twoFindRes = std::find(var.getDomain().cbegin(), var.getDomain().cend(), 2);
+						const auto twoFindRes = std::find(var.getDomain().cbegin(), var.getDomain().cend(), 2);
 						Assert::IsTrue(twoFindRes != var.getDomain().cend());
 					}
 				}

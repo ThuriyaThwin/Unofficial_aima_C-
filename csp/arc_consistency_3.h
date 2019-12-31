@@ -7,7 +7,7 @@
 namespace csp
 {
 	template <typename T>
-	using VariableRefsPair = std::pair<Ref<csp::Variable<T>>, Ref<csp::Variable<T>>>;
+	using VariableRefsPair = std::pair<Ref<Variable<T>>, Ref<Variable<T>>>;
 }
 
 namespace std
@@ -78,7 +78,7 @@ namespace csp
 		bool revised = false;
 		const std::vector<Ref<Constraint<T>>>& variableConstraints = constraintProblem.getConstraintsContainingVariable(variable);
 		const std::vector<Ref<Constraint<T>>>& neighborConstraints = constraintProblem.getConstraintsContainingVariable(neighbor);
-		std::optional<Constraint<T>>& optSharedConstr = __findSharedConstraint<T>(variableConstraints, neighborConstraints);
+		std::optional<Constraint<T>> optSharedConstr = __findSharedConstraint<T>(variableConstraints, neighborConstraints);
 		if (optSharedConstr)
 		{
 			Constraint<T>& sharedConstraint = *optSharedConstr;
@@ -117,7 +117,7 @@ namespace csp
 					return false;
 				}
 
-				std::vector<Ref<Variable<T>>>& neighbors =
+				std::vector<Ref<Variable<T>>> neighbors =
 					const_cast<std::vector<Ref<Variable<T>>>&>(constraintProblem.getNeighbors(unassignedVar));
 				__eraseUnassignedNeighborFromNeighbors<T>(neighbors, unassignedNeighbor.get());
 
@@ -138,7 +138,7 @@ namespace csp
 	std::unordered_set<VariableRefsPair<T>> initArcsAC3(ConstraintProblem<T>& constraintProblem)
 	{
 		std::unordered_set<VariableRefsPair<T>> arcs;
-		const std::vector<Ref<Variable<T>>>& unassignedVars = constraintProblem.getUnassignedVariables();
+		const std::vector<Ref<Variable<T>>> unassignedVars = constraintProblem.getUnassignedVariables();
 		arcs.reserve(unassignedVars.size());
 		for (Variable<T>& unassignedVar : unassignedVars)
 		{
@@ -147,6 +147,6 @@ namespace csp
 				arcs.emplace(unassignedVar, unassignedNeighbor);
 			}
 		}
-		return std::move(arcs);
+		return arcs;
 	}
 }

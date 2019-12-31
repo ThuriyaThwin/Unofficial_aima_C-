@@ -45,13 +45,13 @@ namespace cspTests
 
 		TEST_METHOD(TestBacktracking)
 		{
-			const csp::AssignmentHistory<std::string>& assignmentHistory = csp::backtrackingSolver<std::string>(graphColoringProb);
+			const csp::AssignmentHistory<std::string> assignmentHistory = csp::backtrackingSolver<std::string>(graphColoringProb);
 			Assert::IsTrue(graphColoringProb.isCompletelyConsistentlyAssigned());
 		}
 
 		TEST_METHOD(TestForwardCheckingHeuristicBacktracking)
 		{
-			const csp::AssignmentHistory<std::string>& assignmentHistory = csp::heuristicBacktrackingSolver<std::string>(graphColoringProb,
+			const csp::AssignmentHistory<std::string> assignmentHistory = csp::heuristicBacktrackingSolver<std::string>(graphColoringProb,
 				csp::minimumRemainingValues_primarySelector<std::string>,
 				csp::degreeHeuristic_secondarySelector<std::string>,
 				csp::leastConstrainingValue<std::string>,
@@ -61,7 +61,7 @@ namespace cspTests
 
 		TEST_METHOD(TestMACHeuristicBacktracking)
 		{
-			const csp::AssignmentHistory<std::string>& assignmentHistory = csp::heuristicBacktrackingSolver<std::string>(graphColoringProb,
+			const csp::AssignmentHistory<std::string> assignmentHistory = csp::heuristicBacktrackingSolver<std::string>(graphColoringProb,
 				csp::minimumRemainingValues_primarySelector<std::string>,
 				csp::degreeHeuristic_secondarySelector<std::string>,
 				csp::leastConstrainingValue<std::string>,
@@ -72,30 +72,30 @@ namespace cspTests
 		TEST_METHOD(TestMinConflicts)
 		{
 			//	CSPDO: test with tabu
-			const csp::AssignmentHistory<std::string>& assignmentHistory = csp::minConflicts<std::string>(graphColoringProb, 100);
+			const csp::AssignmentHistory<std::string> assignmentHistory = csp::minConflicts<std::string>(graphColoringProb, 100);
 			Assert::IsTrue(graphColoringProb.isCompletelyConsistentlyAssigned());
 		}
 
 		TEST_METHOD(TestConstraintWeighting)
 		{
-			const csp::AssignmentHistory<std::string>& assignmentHistory = csp::constraintWeighting<std::string>(graphColoringProb, 1000);
+			const csp::AssignmentHistory<std::string> assignmentHistory = csp::constraintWeighting<std::string>(graphColoringProb, 1000);
 			Assert::IsTrue(graphColoringProb.isCompletelyConsistentlyAssigned());
 		}
 
-		/*TEST_METHOD(TestHillClimbing)
+		TEST_METHOD(TestHillClimbing)
 		{
 			std::vector<csp::Variable<std::string>> bestVars;
 			std::vector<csp::Constraint<std::string>> bestConstraints;
 			csp::ConstraintProblem<std::string>& bestProb = csp::randomRestartFirstChoiceHillClimbing(graphColoringProb, 
 				bestConstraints, bestVars, 100, 100, 100);
 			Assert::IsTrue(bestProb.isCompletelyConsistentlyAssigned());
-		}*/
+		}
 
 		TEST_METHOD(TestSimulatedAnnealing)
 		{
 			std::vector<csp::Variable<std::string>> bestVars;
 			std::vector<csp::Constraint<std::string>> bestConstraints;
-			csp::ConstraintProblem<std::string>& bestProb = csp::simulatedAnnealing(graphColoringProb, 
+			csp::ConstraintProblem<std::string> bestProb = csp::simulatedAnnealing(graphColoringProb, 
 				bestConstraints, bestVars, 1000, 0.5, 0.99999);
 			Assert::IsTrue(bestProb.isCompletelyConsistentlyAssigned());
 		}
@@ -104,14 +104,14 @@ namespace cspTests
 		{
 			csp::GeneralGeneticConstraintProblem<std::string> graphColoringGeneticProb{ graphColoringProb, 0.1 };
 			csp::geneticLocalSearch(graphColoringGeneticProb, 100, 10, 0.1);
-			csp::ConstraintProblem<std::string>& graphColorProbFromGeneticProb = graphColoringGeneticProb.getConstraintProblem();
+			csp::ConstraintProblem<std::string> graphColorProbFromGeneticProb = graphColoringGeneticProb.getConstraintProblem();
 			Assert::IsTrue(graphColorProbFromGeneticProb.isCompletelyConsistentlyAssigned());
 		}
 
 		TEST_METHOD(TestTreeCspSolver)
 		{
 			easyGraphColoringProb.unassignAllVariables();
-			const csp::AssignmentHistory<std::string>& assignmentHistory = csp::treeCspSolver(easyGraphColoringProb);
+			const csp::AssignmentHistory<std::string> assignmentHistory = csp::treeCspSolver(easyGraphColoringProb);
 			Assert::IsTrue(easyGraphColoringProb.isCompletelyConsistentlyAssigned());
 		}
 	};

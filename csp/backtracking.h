@@ -22,7 +22,7 @@ namespace csp
 			}
 		}
 
-		const std::vector<Ref<Variable<T>>>& unassignedVars = constraintProblem.getUnassignedVariables();
+		const std::vector<Ref<Variable<T>>> unassignedVars = constraintProblem.getUnassignedVariables();
 		Variable<T>& selectedVar = unassignedVars.back();
 		for (T value : selectedVar.getDomain())
 		{
@@ -52,7 +52,7 @@ namespace csp
 	{
 		AssignmentHistory<T> assignmentHistory;
 		__backtrackingSolver<T>(constraintProblem, assignmentHistory, writeAssignmentHistory);
-		return std::move(assignmentHistory);
+		return assignmentHistory;
 	}
 
 	template <typename T>
@@ -70,7 +70,7 @@ namespace csp
 			}
 		}
 
-		const std::vector<Ref<Variable<T>>>& unassignedVars = constraintProblem.getUnassignedVariables();
+		const std::vector<Ref<Variable<T>>> unassignedVars = constraintProblem.getUnassignedVariables();
 		Variable<T>& selectedVar = unassignedVars.back();
 		for (T value : selectedVar.getDomain())
 		{
@@ -85,6 +85,6 @@ namespace csp
 	{
 		std::unordered_set<Assignment<T>> solutions;
 		__backtrackingSolver_findAllSolutions<T>(constraintProblem, solutions);
-		return std::move(solutions);
+		return solutions;
 	}
 }

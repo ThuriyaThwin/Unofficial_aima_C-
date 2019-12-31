@@ -133,9 +133,11 @@ namespace csp
 				T firstValue = firstVarValuePair.second;
 				Variable<T>& firstVar = firstVarValuePair.first;
 				const std::vector<T>& firstDomain = firstVar.getDomain();
-				const auto& firstDomainItEnd = firstDomain.cend();
-				const auto& firstDomainItBegin = firstDomain.cbegin();
-				auto serachRes = std::find(firstDomainItBegin, firstDomainItEnd, firstValue);
+				const auto firstDomainItEnd = firstDomain.cend();
+				const auto firstDomainItBegin = firstDomain.cbegin();
+				// CSPDO: what if firstDomain is not sorted?
+				//auto serachRes = std::find(std::execution::par_unseq, firstDomainItBegin, firstDomainItEnd, firstValue);
+				auto serachRes = std::lower_bound(firstDomainItBegin, firstDomainItEnd, firstValue);
 				if (serachRes != firstDomainItEnd)
 				{
 					VariableValueNeighborTriplet<T> variableValueNeighborTriplet = 

@@ -11,7 +11,7 @@ namespace csp
 	{
 		ConstraintProblem<T>& constrProb = baseGeneticConstrProb.getConstraintProblem();
 
-		std::vector<Assignment<T>>& population = baseGeneticConstrProb.generatePopulation(populationSize);
+		std::vector<Assignment<T>> population = baseGeneticConstrProb.generatePopulation(populationSize);
 		std::vector<Assignment<T>>* pCurrPopulation = &(population);
 
 		Assignment<T>* pBestIndividual = &(pCurrPopulation->back());
@@ -19,14 +19,14 @@ namespace csp
 
 		for (unsigned i = 0; i < maxGenerations; ++i)
 		{
-			const std::optional<ConstraintProblem<T>>& optSolution = baseGeneticConstrProb.getSolution(*pCurrPopulation);
+			const std::optional<ConstraintProblem<T>> optSolution = baseGeneticConstrProb.getSolution(*pCurrPopulation);
 			if (optSolution)
 			{
 				return;
 			}
 
-			std::vector<Assignment<T>>& selectedPopulation = baseGeneticConstrProb.performNaturalSelection(*pCurrPopulation);
-			std::vector<Assignment<T>>& nextGeneration = baseGeneticConstrProb.produceNextGeneration(selectedPopulation);
+			std::vector<Assignment<T>> selectedPopulation = baseGeneticConstrProb.performNaturalSelection(*pCurrPopulation);
+			std::vector<Assignment<T>> nextGeneration = baseGeneticConstrProb.produceNextGeneration(selectedPopulation);
 			baseGeneticConstrProb.mutateNextGeneration(nextGeneration, mutationProbability);
 			*pCurrPopulation = std::move(nextGeneration);
 

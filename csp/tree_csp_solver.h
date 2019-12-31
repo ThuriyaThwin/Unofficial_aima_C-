@@ -11,7 +11,7 @@ namespace csp
 	{
 		using DirectedGraph = std::unordered_map<Ref<Variable<T>>, std::unordered_set<Ref<Variable<T>>>>;
 		DirectedGraph directedGraph;
-		const std::vector<Ref<Variable<T>>>& variables = constraintProblem.getUnassignedVariables();
+		const std::vector<Ref<Variable<T>>> variables = constraintProblem.getUnassignedVariables();
 
 		for (Variable<T>& var : variables)
 		{
@@ -64,11 +64,11 @@ namespace csp
 
 		if (topologicalySortedUnassginedVars.size() != variables.size())
 		{
-			return std::move(std::vector<Ref<Variable<T>>>{});
+			return std::vector<Ref<Variable<T>>>{};
 		}
 		else
 		{
-			return std::move(topologicalySortedUnassginedVars);
+			return topologicalySortedUnassginedVars;
 		}
 	}
 }
@@ -80,7 +80,7 @@ namespace csp
 	{
 		AssignmentHistory<T> assignmentHistory;
 
-		const std::vector<Ref<Variable<T>>>& topologicalySortedUnassginedVars = __kahnTopologicalSort<T>(constraintProblem);
+		const std::vector<Ref<Variable<T>>> topologicalySortedUnassginedVars = __kahnTopologicalSort<T>(constraintProblem);
 		if (topologicalySortedUnassginedVars.empty())
 		{
 			return assignmentHistory;
@@ -108,7 +108,7 @@ namespace csp
 
 		for (Variable<T>& var : topologicalySortedUnassginedVars)
 		{
-			const std::vector<T>& consistentDomain = constraintProblem.getConsistentDomain(var);
+			const std::vector<T> consistentDomain = constraintProblem.getConsistentDomain(var);
 			if (consistentDomain.empty())
 			{
 				return assignmentHistory;

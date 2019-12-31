@@ -111,8 +111,8 @@ namespace cspTests
 			for (const csp::Variable<double>& var : constraint1.getVariables())
 			{
 				const csp::Variable<double>& otherVar = vars.at(i);
-				const std::vector<double> otherDomain = otherVar.getDomain();
-				const std::vector<double> domain = var.getDomain();
+				const std::vector<double>& otherDomain = otherVar.getDomain();
+				const std::vector<double>& domain = var.getDomain();
 				size_t len = domain.size();
 				for (size_t j = 0; j < len; ++j)
 				{
@@ -155,7 +155,7 @@ namespace cspTests
 			Assert::IsTrue(constraint1.isSatisfied());
 		}
 
-		/*
+		
 		TEST_METHOD(TestEnforceUnaryConstraint)
 		{
 			std::unordered_set<double> expectedDomain{ 1.0, 2.5, 3.7, 4.2 };
@@ -163,13 +163,13 @@ namespace cspTests
 			std::unordered_set<double> actualDomain(var.getDomain().cbegin(), var.getDomain().cend());
 			Assert::IsTrue(actualDomain ==  expectedDomain);
 		}
-		*/
+		
 		
 		TEST_METHOD(TestgetConsistentDomainValues)
 		{
 			var1.assign(3.7);
 			var2.assign(3.7);
-			const std::vector<double>& consistentDomain = constraint2.getConsistentDomainValues(var3);
+			const std::vector<double> consistentDomain = constraint2.getConsistentDomainValues(var3);
 			Assert::IsTrue(consistentDomain.size() == 1);
 			Assert::AreEqual(consistentDomain.front(), 3.7);
 		}

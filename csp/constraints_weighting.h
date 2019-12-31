@@ -38,7 +38,7 @@ namespace csp
 		std::map<Ref<Constraint<T>>, int>& constraintToWeightMap)
 	{
 		int weight = __CalculateWeight<T>(constraintProblem, constraintToWeightMap);
-		const Assignment<T>& originalAssignment = constraintProblem.getCurrentAssignment();
+		const Assignment<T> originalAssignment = constraintProblem.getCurrentAssignment();
 		constraintProblem.unassignAllVariables();
 		std::map<int, VariableValuePair<T>> weightToPairMap;
 		for (Variable<T>& var : constraintProblem.getVariables())
@@ -71,7 +71,7 @@ namespace csp
 	{
 		AssignmentHistory<T> assignmentHistory;
 		std::optional<AssignmentHistory<T>> optAssignmentHistory = std::optional<AssignmentHistory<T>>{ assignmentHistory };
-		const std::vector<Ref<Variable<T>>>& vecReadOnlyVars = constraintProblem.getAssignedVariables();
+		const std::vector<Ref<Variable<T>>> vecReadOnlyVars = constraintProblem.getAssignedVariables();
 		std::unordered_set<Ref<Variable<T>>> readOnlyVars{ vecReadOnlyVars.cbegin(), vecReadOnlyVars.cend() };
 		std::optional<std::unordered_set<Ref<Variable<T>>>> optReadOnlyVars{ readOnlyVars };
 		const std::vector<Ref<Constraint<T>>>& constraints = constraintProblem.getConstraints();
@@ -89,7 +89,7 @@ namespace csp
 			{
 				if (constraintProblem.isCompletelyConsistentlyAssigned())
 				{
-					return std::move(assignmentHistory);
+					return assignmentHistory;
 				}
 
 				auto [reduction, varRef, value] = __geBestReductionVariableValue<T>(constraintProblem, readOnlyVars, constraintToWeightMap);
@@ -119,6 +119,6 @@ namespace csp
 			}
 		}
 
-		return std::move(assignmentHistory);
+		return assignmentHistory;
 	}
 }

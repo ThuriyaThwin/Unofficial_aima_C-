@@ -14,7 +14,7 @@ namespace csp
 	class Constraint final
 	{
 	private:		
-		static const std::unordered_set<Variable<T>*> initVariableAddresses(const std::vector<Ref<Variable<T>>>& variables)
+		static const std::unordered_set<Variable<T>*> init_varsAddresses(const std::vector<Ref<Variable<T>>>& variables)
 		{
 			std::unordered_set<Variable<T>*> varsAddresses;
 			varsAddresses.reserve(variables.size());
@@ -26,20 +26,20 @@ namespace csp
 				}
 				varsAddresses.insert(&var);
 			}
-			return std::move(varsAddresses);
+			return varsAddresses;
 		}
 
-		void enforceUnaryConstraint()
+		void enforce_unary_constraint()
 		{
 			Variable<T>& var = m_vecVariables.back();
 			if (!var.isAssigned())
 			{
-				const std::vector<T>& vecConsistentDomain = this->getConsistentDomainValues(var);
+				const std::vector<T> vecConsistentDomain = this->getConsistentDomainValues(var);
 				var.setSubsetDomain(vecConsistentDomain);
 			}
 		}
 
-		void verifyVariableIsContained(Variable<T>& var) const
+		void verify_variable_is_contained(Variable<T>& var) const
 		{
 			if (!m_usetVariableAddresses.count(&(var)))
 			{
@@ -47,14 +47,14 @@ namespace csp
 			}
 		}
 
-		std::optional<T> getVariableOptValue(Variable<T>& var) const noexcept
+		std::optional<T> get_variable_optional_value(Variable<T>& var) const noexcept
 		{
 			std::optional<T> optValue;
 			if (var.isAssigned())
 			{
 				optValue = var.getValue();
 			}
-			return std::move(optValue);
+			return optValue;
 		}
 
 		std::unordered_set<Variable<T>*> m_usetVariableAddresses;
@@ -65,13 +65,13 @@ namespace csp
 	public:
 		Constraint() = delete;
 		Constraint(const std::vector<Ref<Variable<T>>>& variables, const ConstraintEvaluator& evaluateConstraint) :
-			m_usetVariableAddresses{ initVariableAddresses(variables) },
+			m_usetVariableAddresses{ init_varsAddresses(variables) },
 			m_vecVariables{ variables }, 
 			m_ceEvaluateConstraint{ evaluateConstraint }
 		{
 			if (m_vecVariables.size() == 1)
 			{
-				enforceUnaryConstraint();
+				enforce_unary_constraint();
 			}
 		}
 
@@ -151,8 +151,8 @@ namespace csp
 
 		const std::vector<T> getConsistentDomainValues(Variable<T>& var) const
 		{
-			this->verifyVariableIsContained(var);
-			std::optional<T> optValue = this->getVariableOptValue(var);
+			this->verify_variable_is_contained(var);
+			std::optional<T> optValue = this->get_variable_optional_value(var);
 			if (optValue)
 			{
 				var.unassign();
@@ -175,7 +175,7 @@ namespace csp
 			{
 				var.assign(*optValue);
 			}
-			return std::move(consistentDomain);
+			return consistentDomain;
 		}
 
 		friend std::ostream& operator<<(std::ostream& os, const Constraint<T>& constraint) noexcept

@@ -37,18 +37,18 @@ namespace csp
 	const AssignmentHistory<T> naiveCycleCutset(ConstraintProblem<T>& constraintProblem, bool writeAssignmentHistory = false)
 	{
 		AssignmentHistory<T> assignmentHistory;
-		const std::vector<Ref<Variable<T>>>& variables = constraintProblem.getUnassignedVariables();
-		const std::vector<Ref<Variable<T>>>& readOnlyVariables = constraintProblem.getAssignedVariables();
+		const std::vector<Ref<Variable<T>>> variables = constraintProblem.getUnassignedVariables();
+		const std::vector<Ref<Variable<T>>> readOnlyVariables = constraintProblem.getAssignedVariables();
 		std::vector<Ref<Constraint<T>>>& constraints = 
 			const_cast<std::vector<Ref<Constraint<T>>>&>(constraintProblem.getConstraints());
-		std::sort(constraints.begin(), constraints.end(), 
+		std::sort(std::execution::par_unseq, constraints.begin(), constraints.end(),
 			[] (const Constraint<T>& left, const Constraint<T>& right) -> bool
 			{
 				return left.getVariables().size() > right.getVariables().size();
 			});
 		const ConstraintGraph<T>& constraintGraph = constraintProblem.getConstraintGraph();
 
-		const auto& constraintsItToBegin = constraints.cbegin();
+		const auto constraintsItToBegin = constraints.cbegin();
 
 
 		for (size_t i = 1; i < constraints.size(); ++i)

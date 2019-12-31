@@ -20,16 +20,17 @@ namespace csp
 			Assignment<T> child;
 			for (Variable<T>& var : this->m_ConstraintProb.getVariables())
 			{
+				// CSPDO: for some reason it sometimes throws an exception, try to reproduce
 				if (zeroToOneDistribution(defaultRandomEngine) < 0.5)
 				{
-					child.emplace(var, firstParent.at(var));
+					child.emplace(var, firstParent.at(std::ref(var)));
 				}
 				else
 				{
-					child.emplace(var, secondParent.at(var));
+					child.emplace(var, secondParent.at(std::ref(var)));
 				}
 			}
-			return std::move(child);
+			return child;
 		}
 
 		void mutate(Assignment<T>& assignment) noexcept
@@ -63,11 +64,13 @@ namespace csp
 				T oldVal = var.getValue();
 				size_t domainSize = var.getDomain().size();
 				var.unassign();
-				T newVal = var.assignWithRandomlySelectedValue();
+				var.assignWithRandomlySelectedValue();
+				T newVal = var.getValue();
 				while (1 < domainSize && newVal == oldVal)
 				{
 					var.unassign();
-					newVal = var.assignWithRandomlySelectedValue();
+					var.assignWithRandomlySelectedValue();
+					newVal = var.getValue();
 				}
 			}
 		}
@@ -129,7 +132,7 @@ namespace csp
 				population.emplace_back(this->m_ConstraintProb.getCurrentAssignment());
 				this->m_ConstraintProb.unassignAllVariables();
 			}
-			return std::move(population);
+			return population;
 		}
 
 		unsigned int calculateFitness(const Assignment<T>& assignment) override
@@ -152,12 +155,12 @@ namespace csp
 			std::vector<Assignment<T>> selectedPopulation;
 			size_t trunctedPopulationSize = population.size() >> 1;
 			selectedPopulation.reserve(trunctedPopulationSize);
-			for (auto& it = scoreToIndividualMap.crbegin(); 0 < trunctedPopulationSize; --trunctedPopulationSize, ++it)
+			for (auto it = scoreToIndividualMap.crbegin(); 0 < trunctedPopulationSize; --trunctedPopulationSize, ++it)
 			{
 				selectedPopulation.emplace_back(it->second);
 			}
 
-			return std::move(selectedPopulation);
+			return selectedPopulation;
 		}
 
 		std::vector<Assignment<T>> produceNextGeneration(const std::vector<Assignment<T>>& oldGeneration) override
@@ -174,7 +177,7 @@ namespace csp
 				std::sample(oldGeneration.cbegin(), oldGeneration.cend(), std::back_inserter(parents), 2, randomDefaultEng);
 				nextGeneration.emplace_back(this->reproduce(parents.front(), parents.back()));
 			}
-			return std::move(nextGeneration);
+			return nextGeneration;
 		}
 
 		void mutateNextGeneration(std::vector<Assignment<T>>& population, double mutationProbability) override

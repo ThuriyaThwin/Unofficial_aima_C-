@@ -9,22 +9,22 @@ namespace csp
 	template <typename T>
 	const std::vector<T> doNotSort(const ConstraintProblem<T>& constraintProblem, const Variable<T>& variable)
 	{
-		return std::move(constraintProblem.getConsistentDomain(variable));
+		return constraintProblem.getConsistentDomain(variable);
 	}
 
 	template <typename T>
 	const std::vector<T> leastConstrainingValue(ConstraintProblem<T>& constraintProb, Variable<T>& var)
 	{
 		std::multimap<size_t, T> scoreToValueMap;
-		const std::vector<Ref<Variable<T>>>& unassignedNeighbors = constraintProb.getUnassignedNeighbors(var);
-		const std::vector<T>& consistentDomain = constraintProb.getConsistentDomain(var);
+		const std::vector<Ref<Variable<T>>> unassignedNeighbors = constraintProb.getUnassignedNeighbors(var);
+		const std::vector<T> consistentDomain = constraintProb.getConsistentDomain(var);
 		for (T value : consistentDomain)
 		{
 			var.assign(value);
 			size_t neighborDomainLengthsSum = 0;
 			for (Variable<T>& unassignedNeigh : unassignedNeighbors)
 			{
-				const std::vector<T>& neighborConsistentDomain = constraintProb.getConsistentDomain(unassignedNeigh);
+				const std::vector<T> neighborConsistentDomain = constraintProb.getConsistentDomain(unassignedNeigh);
 				neighborDomainLengthsSum += neighborConsistentDomain.size();
 			}
 			scoreToValueMap.emplace(neighborDomainLengthsSum, value);
@@ -35,6 +35,6 @@ namespace csp
 		sortedDomain.reserve(scoreToValueMap.size());
 		std::transform(scoreToValueMap.cbegin(), scoreToValueMap.cend(), back_inserter(sortedDomain),
 			[](const std::pair<size_t, T>& scoreToValue) -> T { return scoreToValue.second; });
-		return std::move(sortedDomain);
+		return sortedDomain;
 	}
 }

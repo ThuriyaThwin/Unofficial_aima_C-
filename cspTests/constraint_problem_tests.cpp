@@ -89,7 +89,7 @@ namespace cspTests
 		{
 			std::vector<csp::Variable<std::string>> copiedVars;
 			std::vector<csp::Constraint<std::string>> copiedConstraints;
-			csp::ConstraintProblem<std::string>& copiedGraphColoringProb = graphColoringProb.deepCopy(copiedVars, copiedConstraints);
+			csp::ConstraintProblem<std::string> copiedGraphColoringProb = graphColoringProb.deepCopy(copiedVars, copiedConstraints);
 
 			csp::ConstraintProblem<std::string> movedProb = std::move(copiedGraphColoringProb);
 			Assert::IsTrue(copiedGraphColoringProb.getVariables().size() == 0);
@@ -103,7 +103,7 @@ namespace cspTests
 			graphColoringProb.assignVarsWithRandomValues();
 			std::vector<csp::Variable<std::string>> copiedVars;
 			std::vector<csp::Constraint<std::string>> copiedConstraints;
-			csp::ConstraintProblem<std::string>& copiedGraphColoringProb = graphColoringProb.deepCopy(copiedVars, copiedConstraints);
+			csp::ConstraintProblem<std::string> copiedGraphColoringProb = graphColoringProb.deepCopy(copiedVars, copiedConstraints);
 			Assert::IsTrue(copiedGraphColoringProb.getVariables().size() == 7);
 			Assert::IsTrue(copiedGraphColoringProb.getConstraints().size() == 10);
 			int twoConstrVarsSizeCounter = 0;
@@ -193,7 +193,7 @@ namespace cspTests
 
 		TEST_METHOD(TestGetVariables)
 		{
-			const std::vector<std::reference_wrapper<csp::Variable<std::string>>>& graphColoringVars = graphColoringProb.getVariables();
+			const std::vector<std::reference_wrapper<csp::Variable<std::string>>> graphColoringVars = graphColoringProb.getVariables();
 			for (std::pair<const std::string, csp::Variable<std::string>>& nameToVar : NameToVarUMap)
 			{
 				Assert::IsTrue(find(graphColoringVars.cbegin(), graphColoringVars.cend(),
@@ -339,7 +339,7 @@ namespace cspTests
 		TEST_METHOD(TestGetConsistentDomain)
 		{
 			NameToVarUMap.at("wa").assign("Red");
-			const std::vector<std::string> consistentDomain1{ "Green", "Blue" };
+			const std::vector<std::string> consistentDomain1{ "Blue", "Green" };
 			Assert::IsTrue(consistentDomain1 == graphColoringProb.getConsistentDomain(NameToVarUMap.at("sa")));
 			Assert::IsTrue(consistentDomain1 == graphColoringProb.getConsistentDomain(NameToVarUMap.at("nt")));
 

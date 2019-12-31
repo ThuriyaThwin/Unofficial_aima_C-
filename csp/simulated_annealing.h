@@ -17,11 +17,11 @@ namespace csp
 		const SuccessorGenerator<T>& generateSuccessor = alterRandomVariableValuePair<T>,
 		const ScoreCalculator<T>& calculateScore = consistentConstraintsAmount<T>)
 	{
-		ConstraintProblem<T>& bestProblem = generateStartState(constraintProblem, bestVars, bestConstraints);
+		ConstraintProblem<T> bestProblem = generateStartState(constraintProblem, bestVars, bestConstraints);
 		ConstraintProblem<T>* pBestProblem = &(bestProblem);
 		if (pBestProblem->isCompletelyConsistentlyAssigned() || maxSteps == 1)
 		{
-			return std::move(*pBestProblem);
+			return *pBestProblem;
 		}
 		--maxSteps;
 
@@ -32,7 +32,7 @@ namespace csp
 		unsigned int bestScore = calculateScore(*pBestProblem);
 		std::vector<csp::Variable<T>> currVars;
 		std::vector<csp::Constraint<T>> currConstrs;
-		ConstraintProblem<T>& currConstrProb = pBestProblem->deepCopy(currVars, currConstrs);
+		ConstraintProblem<T> currConstrProb = pBestProblem->deepCopy(currVars, currConstrs);
 		ConstraintProblem<T>* pCurrConstrProb = &(currConstrProb);
 		for (unsigned int i = 0; i < maxSteps; ++i)
 		{
@@ -41,7 +41,7 @@ namespace csp
 				bestConstraints.clear();
 				bestVars.clear();
 				*pBestProblem = pCurrConstrProb->deepCopy(bestVars, bestConstraints);
-				return std::move(*pBestProblem);
+				return *pBestProblem;
 			}
 
 			unsigned int currScore = calculateScore(*pCurrConstrProb);
@@ -55,7 +55,7 @@ namespace csp
 
 			std::vector<csp::Variable<T>> successorVars;
 			std::vector<csp::Constraint<T>> successorConstrs;
-			ConstraintProblem<T>& successorProb = generateSuccessor(*pCurrConstrProb, successorVars, successorConstrs);
+			ConstraintProblem<T> successorProb = generateSuccessor(*pCurrConstrProb, successorVars, successorConstrs);
 			unsigned int successorScore = calculateScore(successorProb);
 			int delta = successorScore - currScore;
 			if (0 < delta || zeroToOneDistribution(defaultRandomEngine) < std::exp(delta / temperature))
@@ -67,6 +67,6 @@ namespace csp
 			temperature *= coolingRate;
 		}
 
-		return std::move(*pBestProblem);
+		return *pBestProblem;
 	}
 }

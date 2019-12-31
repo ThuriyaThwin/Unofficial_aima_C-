@@ -19,14 +19,14 @@
     <Filter Include="Header Files\cspSolvers">
       <UniqueIdentifier>{42857c34-e65c-4c76-94a4-32ee66931389}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Header Files\cspInferences">
-      <UniqueIdentifier>{0b0051be-9e98-4774-bbc7-2be272298507}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Header Files\cspUtil">
       <UniqueIdentifier>{e63f6322-6c3d-454c-a677-c409a381315f}</UniqueIdentifier>
     </Filter>
     <Filter Include="Header Files\cspPreprocessing">
       <UniqueIdentifier>{027a6f6b-98f4-4484-bc8a-2f182f02bc63}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\cspInferences">
+      <UniqueIdentifier>{0b0051be-9e98-4774-bbc7-2be272298507}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>

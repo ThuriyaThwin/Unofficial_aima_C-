@@ -30,7 +30,7 @@ namespace csp
 		}
 		if (optReadOnlyVars)
 		{
-			for (auto& it = conflictedVars.begin(); it != conflictedVars.end(); )
+			for (auto it = conflictedVars.begin(); it != conflictedVars.end(); )
 			{
 				if ((*optReadOnlyVars).count(*it))
 				{
@@ -93,13 +93,13 @@ namespace csp
 		constraintProblem.assignVarsWithRandomValues(optReadOnlyVars, assignmentHistory);
 
 		size_t bestMinConflicts = constraintProblem.getUnsatisfiedConstraintsSize();
-		Assignment<T>& bestAssignment = const_cast<Assignment<T>&>(constraintProblem.getCurrentAssignment());
+		Assignment<T> bestAssignment = const_cast<Assignment<T>&>(constraintProblem.getCurrentAssignment());
 		Assignment<T>* ptrBestAssignment = &(bestAssignment);
 		for (unsigned int i = 0; i < maxSteps; ++i)
 		{
 			if (constraintProblem.isCompletelyConsistentlyAssigned())
 			{
-				return std::move(assignmentHistory);
+				return assignmentHistory;
 			}
 
 			Variable<T>& conflictedVar = __getRandomConflictedVariable<T>(constraintProblem, optReadOnlyVars);
@@ -120,7 +120,7 @@ namespace csp
 			if (currConflictsCount < bestMinConflicts)
 			{
 				bestMinConflicts = currConflictsCount;
-				const Assignment<T>& currAssignment = constraintProblem.getCurrentAssignment();
+				const Assignment<T> currAssignment = constraintProblem.getCurrentAssignment();
 				*ptrBestAssignment = const_cast<Assignment<T>&>(currAssignment);
 			}
 		}

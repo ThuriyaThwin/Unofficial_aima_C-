@@ -17,11 +17,11 @@ namespace csp
 		const SuccessorGenerator<T>& generateSuccessor = alterRandomVariableValuePair<T>,
 		const ScoreCalculator<T>& calculateScore = consistentConstraintsAmount<T>)
 	{
-		ConstraintProblem<T>& bestProblem = generateStartState(constraintProblem, bestVars, bestConstraints);
+		ConstraintProblem<T> bestProblem = generateStartState(constraintProblem, bestVars, bestConstraints);
 		ConstraintProblem<T>* pBestProblem = &(bestProblem);
 		if (pBestProblem->isCompletelyConsistentlyAssigned() || maxRestarts == 1)
 		{
-			return std::move(*pBestProblem);
+			return *pBestProblem;
 		}
 		--maxRestarts;
 
@@ -31,7 +31,7 @@ namespace csp
 		{
 			std::vector<csp::Variable<T>> currVars;
 			std::vector<csp::Constraint<T>> currConstrs;
-			ConstraintProblem<T>& currConstrProb = generateStartState(*pBestProblem, currVars, currConstrs);
+			ConstraintProblem<T> currConstrProb = generateStartState(*pBestProblem, currVars, currConstrs);
 			ConstraintProblem<T>* pCurrConstrProb = &(currConstrProb);
 			for (unsigned int j = 0; j < maxSteps; ++j)
 			{
@@ -40,7 +40,7 @@ namespace csp
 					bestConstraints.clear();
 					bestVars.clear();
 					*pBestProblem = pCurrConstrProb->deepCopy(bestVars, bestConstraints);
-					return std::move(*pBestProblem);
+					return *pBestProblem;
 				}
 
 				unsigned int currScore = calculateScore(*pCurrConstrProb);
@@ -56,7 +56,7 @@ namespace csp
 				{
 					std::vector<csp::Variable<T>> successorVars;
 					std::vector<csp::Constraint<T>> successorConstrs;
-					ConstraintProblem<T>& successorProb = generateSuccessor(*pCurrConstrProb, successorVars, successorConstrs);
+					ConstraintProblem<T> successorProb = generateSuccessor(*pCurrConstrProb, successorVars, successorConstrs);
 					unsigned int successorScore = calculateScore(successorProb);
 					if (currScore < successorScore)
 					{
@@ -69,6 +69,6 @@ namespace csp
 			}
 		}
 
-		return std::move(*pBestProblem);
+		return *pBestProblem;
 	}
 }

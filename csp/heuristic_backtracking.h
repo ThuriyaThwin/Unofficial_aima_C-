@@ -39,10 +39,10 @@ namespace csp
 			}
 		}
 
-		const std::vector<Ref<Variable<T>>>& candidateVars = primarySelector(constraintProblem);
+		const std::vector<Ref<Variable<T>>> candidateVars = primarySelector(constraintProblem);
 		Variable<T>& selectedVar = candidateVars.size() == 1 ? candidateVars[0].get() : secondarySelector(constraintProblem, candidateVars);
 
-		const std::vector<T>& sortedDomain = optDomainSorter ? (*optDomainSorter)(constraintProblem, selectedVar) : selectedVar.getDomain();
+		const std::vector<T> sortedDomain = optDomainSorter ? (*optDomainSorter)(constraintProblem, selectedVar) : selectedVar.getDomain();
 		for (T value : sortedDomain)
 		{
 			selectedVar.assign(value);
@@ -88,7 +88,7 @@ namespace csp
 		AssignmentHistory<T> assignmentHistory;
 		__heuristicBacktrackingSolver<T>(constraintProblem, primarySelector, secondarySelector, optDomainSorter, optInference, 
 			writeAssignmentHistory, assignmentHistory);
-		return std::move(assignmentHistory);
+		return assignmentHistory;
 	}
 
 	template <typename T>
@@ -111,10 +111,10 @@ namespace csp
 			}
 		}
 
-		const std::vector<Ref<Variable<T>>>& candidateVars = primarySelector(constraintProblem);
+		const std::vector<Ref<Variable<T>>> candidateVars = primarySelector(constraintProblem);
 		Variable<T>& selectedVar = candidateVars.size() == 1 ? candidateVars[0].get() : secondarySelector(constraintProblem, candidateVars);
 
-		const std::vector<T>& sortedDomain = optDomainSorter ? (*optDomainSorter)(constraintProblem, selectedVar) : selectedVar.getDomain();
+		const std::vector<T> sortedDomain = optDomainSorter ? (*optDomainSorter)(constraintProblem, selectedVar) : selectedVar.getDomain();
 		for (T value : sortedDomain)
 		{
 			selectedVar.assign(value);
@@ -142,6 +142,6 @@ namespace csp
 		std::unordered_set<Assignment<T>> solutions;
 		__heuristicBacktrackingSolver_findAllSolutions<T>(constraintProblem, primarySelector, secondarySelector, optDomainSorter,
 			optInference, solutions);
-		return std::move(solutions);
+		return solutions;
 	}
 }

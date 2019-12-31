@@ -16,11 +16,11 @@ namespace csp
 	template <typename T>
 	const std::vector<Ref<Variable<T>>> minimumRemainingValues_primarySelector(ConstraintProblem<T>& constraintProblem)
 	{
-		const std::vector<Ref<Variable<T>>>& unassignedVariables = constraintProblem.getUnassignedVariables();
+		const std::vector<Ref<Variable<T>>> unassignedVariables = constraintProblem.getUnassignedVariables();
 		std::multimap<size_t, Ref<Variable<T>>> scoreToVarMap;
 		for (Variable<T>& unassignedVar : unassignedVariables)
 		{
-			const std::vector<T>& consistentDomain = constraintProblem.getConsistentDomain(unassignedVar);
+			const std::vector<T> consistentDomain = constraintProblem.getConsistentDomain(unassignedVar);
 			scoreToVarMap.emplace(consistentDomain.size() , unassignedVar);
 		}
 
@@ -38,7 +38,7 @@ namespace csp
 				break;
 			}
 		}
-		return std::move(variables);
+		return variables;
 	}
 
 	template <typename T>
@@ -48,7 +48,7 @@ namespace csp
 		std::multimap<size_t, Ref<Variable<T>>> scoreToVarMap;
 		for (Variable<T>& var : candidateVariables)
 		{
-			const std::vector<T>& consistentDomain = constraintProblem.getConsistentDomain(var);
+			const std::vector<T> consistentDomain = constraintProblem.getConsistentDomain(var);
 			scoreToVarMap.emplace(consistentDomain.size() , var);
 		}
 		return scoreToVarMap.cbegin()->second;
@@ -57,18 +57,18 @@ namespace csp
 	template <typename T>
 	const std::vector<Ref<Variable<T>>> degreeHeuristic_primarySelector(const ConstraintProblem<T>& constraintProblem)
 	{
-		const std::vector<Ref<Variable<T>>>& unassignedVariables = constraintProblem.getUnassignedVariables();
+		const std::vector<Ref<Variable<T>>> unassignedVariables = constraintProblem.getUnassignedVariables();
 		std::multimap<size_t, Ref<Variable<T>>> scoreToVarMap;
 		for (Variable<T>& unassignedVar : unassignedVariables)
 		{
-			const std::vector<Ref<Variable<T>>>& unassignedNeighbors = constraintProblem.getUnassignedNeighbors(unassignedVar);
+			const std::vector<Ref<Variable<T>>> unassignedNeighbors = constraintProblem.getUnassignedNeighbors(unassignedVar);
 			scoreToVarMap.emplace(unassignedNeighbors.size() , unassignedVar);
 		}
 
 		size_t biggestUnassignedNeighborsSize = scoreToVarMap.crbegin()->first;
 		std::vector<Ref<Variable<T>>> variables;
 		variables.reserve(scoreToVarMap.size() >> 2);
-		for (const auto& it = scoreToVarMap.crbegin(); it != scoreToVarMap.crend(); ++it)
+		for (const auto it = scoreToVarMap.crbegin(); it != scoreToVarMap.crend(); ++it)
 		{
 			if (it->first == biggestUnassignedNeighborsSize)
 			{
@@ -79,7 +79,7 @@ namespace csp
 				break;
 			}
 		}
-		return std::move(variables);
+		return variables;
 	}
 
 	template <typename T>
@@ -89,7 +89,7 @@ namespace csp
 		std::multimap<size_t, Ref<Variable<T>>> scoreToVarMap;
 		for (Variable<T>& var : candidateVariables)
 		{
-			const std::vector<Ref<Variable<T>>>& unassignedNeighbors = constraintProblem.getUnassignedNeighbors(var);
+			const std::vector<Ref<Variable<T>>> unassignedNeighbors = constraintProblem.getUnassignedNeighbors(var);
 			scoreToVarMap.emplace(unassignedNeighbors.size() , var );
 		}
 		return scoreToVarMap.crbegin()->second;

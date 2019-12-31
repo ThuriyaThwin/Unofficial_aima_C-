@@ -37,9 +37,10 @@ namespace csp
 	class Variable final
 	{
 	private:
-		static const size_t UNASSIGNED = std::numeric_limits<size_t>::max();
+		static constexpr size_t UNASSIGNED = std::numeric_limits<size_t>::max();
 
-		static const std::vector<T> initDomain(const std::unordered_set<T>& domain) noexcept
+		static const std::vector<T> init_domain(const std::unordered_set<T>& domain,
+			const std::function<bool(T left, T right)>& compare) noexcept
 		{
 			// CSPDO: test it
 			if constexpr (!__is_to_stream_writable<std::ostream, T>::value)
@@ -48,21 +49,31 @@ namespace csp
 			}
 
 			std::vector<T> vecDomain{ domain.cbegin(), domain.cend() };
-			return std::move(vecDomain);
+			std::sort(std::execution::par_unseq, vecDomain.begin(), vecDomain.end(), compare);
+			return vecDomain;
 		}
 
 		std::vector<T> m_vecDomain;
-		size_t m_valueIdx;
-
+		std::function<constexpr bool(T left, T right)> m_funcCompare;
+		size_t m_size_tValueIdx;
+		
 	public:
 		Variable<T>() = delete;
-		Variable<T>(const std::unordered_set<T>& domain) :
-			m_vecDomain{ initDomain(domain) }, m_valueIdx{ UNASSIGNED }
+
+		// CSPDO: what if std::less<T> doesn't exists?
+		Variable<T>(const std::unordered_set<T>& domain, 
+			std::function<constexpr bool(T left, T right)> compare = std::less<T>()) :
+			m_vecDomain{ init_domain(domain, compare) }, 
+			m_funcCompare{ compare }, 
+			m_size_tValueIdx{ UNASSIGNED }
 		{ }
 
 		~Variable<T>() = default;
 
-		Variable<T>(const Variable<T>& otherVar) : m_vecDomain{ otherVar.m_vecDomain }, m_valueIdx{ otherVar.m_valueIdx }
+		Variable<T>(const Variable<T>& otherVar) : 
+			m_vecDomain{ otherVar.m_vecDomain }, 
+			m_funcCompare{ otherVar.m_funcCompare }, 
+			m_size_tValueIdx{ otherVar.m_size_tValueIdx }
 		{ }
 
 		Variable<T>& operator=(const Variable<T>& otherVar)
@@ -70,17 +81,21 @@ namespace csp
 			return *this = Variable<T>(otherVar);
 		}
 
-		Variable<T>(Variable<T>&& otherVar) noexcept : m_vecDomain{ std::move(otherVar.m_vecDomain) }, m_valueIdx{ otherVar.m_valueIdx }
+		Variable<T>(Variable<T>&& otherVar) noexcept : 
+			m_vecDomain{ std::move(otherVar.m_vecDomain) },
+			m_funcCompare{ std::move(otherVar.m_funcCompare) },
+			m_size_tValueIdx{ otherVar.m_size_tValueIdx }
 		{ }
 
 		Variable<T>& operator=(Variable<T>&& otherVar) noexcept
 		{
 			std::swap(m_vecDomain, otherVar.m_vecDomain);
-			std::swap(m_valueIdx, otherVar.m_valueIdx);
+			std::swap(m_funcCompare, otherVar.m_funcCompare);
+			std::swap(m_size_tValueIdx, otherVar.m_size_tValueIdx);
 			return *this;
 		}
 
-		constexpr bool isAssigned() const noexcept { return m_valueIdx != UNASSIGNED; }
+		constexpr bool isAssigned() const noexcept { return m_size_tValueIdx != UNASSIGNED; }
 
 		constexpr T getValue() const
 		{
@@ -88,10 +103,10 @@ namespace csp
 			{
 				throw unassigned_value_extraction_error<T>{ *this };
 			}
-			return m_vecDomain[m_valueIdx];
+			return m_vecDomain[m_size_tValueIdx];
 		}
 
-		void unassign() noexcept { m_valueIdx = UNASSIGNED; }
+		void unassign() noexcept { m_size_tValueIdx = UNASSIGNED; }
 
 		void assign(T val)
 		{
@@ -99,29 +114,19 @@ namespace csp
 			{
 				throw over_assignment_error<T>{ *this };
 			}
-
-			size_t idx = 0;
-			bool isValFound = false;
-			for ( ; idx < m_vecDomain.size(); ++idx)
+			const auto itToBeginDomain = m_vecDomain.cbegin();
+			const auto itToValPosition = std::lower_bound(itToBeginDomain, m_vecDomain.cend(), val);
+			if (*itToValPosition != val)
 			{
-				if (m_vecDomain[idx] == val)
-				{
-					isValFound = true;
-					break;
-				}
-			}
-
-			if (!isValFound)
-			{
-				throw uncontained_value_error<T>{ *this, val };
+				throw uncontained_value_error<T>{ *this, val};
 			}
 			else
 			{
-				m_valueIdx = idx;
+				m_size_tValueIdx = itToValPosition - itToBeginDomain;
 			}
 		}
 
-		T assignWithRandomlySelectedValue()
+		void assignWithRandomlySelectedValue()
 		{
 			if (this->isAssigned())
 			{
@@ -131,8 +136,7 @@ namespace csp
 			std::random_device randomDevice;
 			std::default_random_engine defaultRandomEngine{ randomDevice() };
 			std::uniform_int_distribution<size_t> zeroToDomainLenDistribution(0, m_vecDomain.size() - 1);
-			m_valueIdx = zeroToDomainLenDistribution(defaultRandomEngine);
-			return m_vecDomain[m_valueIdx];
+			m_size_tValueIdx = zeroToDomainLenDistribution(defaultRandomEngine);
 		}
 
 		const std::vector<T>& getDomain() const noexcept
@@ -147,7 +151,7 @@ namespace csp
 				throw domain_alteration_error<T>(*this);
 			}
 			m_vecDomain.erase(m_vecDomain.begin() + idx);
-			m_valueIdx = UNASSIGNED;
+			m_size_tValueIdx = UNASSIGNED;
 		}
 
 		bool setSubsetDomain(const std::vector<T>& vecSubsetDomain)
@@ -173,7 +177,8 @@ namespace csp
 			}
 
 			m_vecDomain = vecSubsetDomain;
-			m_valueIdx = UNASSIGNED;
+			std::sort(std::execution::par_unseq, m_vecDomain.begin(), m_vecDomain.end(), m_funcCompare);
+			m_size_tValueIdx = UNASSIGNED;
 			wasDomainShortened = true;
 			return wasDomainShortened;
 		}
@@ -236,7 +241,7 @@ namespace csp
 		{
 			std::unordered_map<std::string, Variable<T>> NameToVarUMap;
 			Variable<T>::constructFromNamesToEqualDomain(NameToVarUMap, names, domain);
-			return std::move(NameToVarUMap);
+			return NameToVarUMap;
 		}
 	};
 
@@ -295,7 +300,7 @@ namespace csp
 	public:
 		uncontained_value_error(const Variable<T>& var, T value) : 
 			std::domain_error{ "Cannot assign variable: " + var.toString()
-			+ " with value: " + getValueStr(std::forward<T>(value)) + " since it is not contained in variable's domain." }
+			+ " with value: " + getValueStr(value) + " since it is not contained in variable's domain." }
 		{ }
 	};
 }

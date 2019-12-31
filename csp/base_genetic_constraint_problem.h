@@ -65,7 +65,7 @@ namespace csp
 					break;
 				}
 			}
-			return std::move(optSolution);
+			return optSolution;
 		}
 	};
 }

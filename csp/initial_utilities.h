@@ -4,8 +4,7 @@
 
 // CSPDOs in general:
 // switch syntax of all "constructor(container.cbegin(), container.cend())" to constructor{ container.cbegin(), container.cend() }"
-/* figure out a way to know in compile time whether we should use "for (T val : values)" or "for (const T& val : values).
-   same goes for functions returning T by-value instead of by reference, like Variabke.getValue() for example. std::is_fundamental might be useful. */
+// use std::is_fundamental and std::conditional to ascertain whether to pass T around by value or by const reference
 // allow users to determine it they want the whole assignment history or simply the number of assignments and un-assignments.
 // rewrite various solvers so that they'll output their assignment history.
 /* in variable's constructor allow users to give a way to keep the domain vector sorted, so that searches could be made using binary search.
@@ -16,14 +15,49 @@
 // use coroutines in backtracking
 // use wait and notify on atomics in ConstraintProblem<T>::isCompletelyConsistentlyAssigned()
 // use a concept for T in Variable<T>
-// make this library a module
+// turn this library into a module
 
 
 namespace csp
 {
 	template <typename U>
 	using Ref = std::reference_wrapper<U>;
+
+	template <typename T>
+	using optCompare = std::optional<std::function<constexpr bool(T left, T right)>>;
 }
+
+namespace csp
+{
+	template<typename S, typename T, typename = void>
+	struct __is_to_stream_writable : std::false_type
+	{ };
+
+	template<typename Stream, typename T>
+	struct __is_to_stream_writable<Stream, T, std::void_t<decltype(std::declval<Stream&>() << std::declval<T>())>> : std::true_type
+	{ };
+
+	template<class, class = std::void_t<>>
+	struct __is_comparable_to_T : std::false_type { };
+
+	template<class T>
+	struct __is_comparable_to_T< T, std::void_t< decltype(std::declval<const T&>() < std::declval<const T&>())> > : std::true_type { };
+
+	template <typename T>
+	bool __compare_T(const T& left, const T& right)
+	{
+		return left < right;
+	}
+
+	template <typename T>
+	using __T_less_than_operator_return_value = typename std::result_of<decltype(__compare_T<T>)&(const T& left, const T& right)>::type;
+
+}
+
+
+// CSPDO: perhaps use std::result_of https://en.cppreference.com/w/cpp/types/result_of
+// http://www.cplusplus.com/reference/type_traits/result_of/
+
 
 
 namespace csp

@@ -6,19 +6,6 @@
 
 namespace csp
 {
-	// https://stackoverflow.com/a/49026811
-	template<typename S, typename T, typename = void>
-	struct __is_to_stream_writable : std::false_type
-	{ };
-
-	template<typename S, typename T>
-	struct __is_to_stream_writable<S, T, std::void_t<decltype(std::declval<S&>() << std::declval<T>())>> : std::true_type
-	{ };
-}
-
-
-namespace csp
-{
 	template<typename T> class template_argument_T_not_writable_to_cout_error;
 	template<typename T> class unassigned_value_extraction_error;
 	template<typename T> class over_assignment_error;
@@ -39,34 +26,68 @@ namespace csp
 	private:
 		static constexpr size_t UNASSIGNED = std::numeric_limits<size_t>::max();
 
-		static const std::vector<T> init_domain(const std::unordered_set<T>& domain,
-			const std::function<bool(T left, T right)>& compare) noexcept
+
+		static optCompare<T> init_compare()
 		{
-			// CSPDO: test it
-			if constexpr (!__is_to_stream_writable<std::ostream, T>::value)
+			optCompare<T> optCompare;
+
+			static_assert(__is_to_stream_writable<std::ostream, T>::value, "T must be writable to std::cout.");
+
+			if constexpr (__is_comparable_to_T<T>::value &&
+				std::is_same<__T_less_than_operator_return_value<T>, bool>::value)
 			{
-				throw template_argument_T_not_writable_to_cout_error<T>{};
+				optCompare = std::less<T>();
 			}
 
+			return optCompare;
+		}
+
+		std::vector<T> init_domain(const std::unordered_set<T>& domain) noexcept
+		{
 			std::vector<T> vecDomain{ domain.cbegin(), domain.cend() };
-			std::sort(std::execution::par_unseq, vecDomain.begin(), vecDomain.end(), compare);
+
+			if (m_optCompare)
+			{
+				std::sort(std::execution::par_unseq, vecDomain.begin(), vecDomain.end(), *m_optCompare);
+			}
+
 			return vecDomain;
 		}
 
+		//static const std::vector<T> init_domain(const std::unordered_set<T>& domain,
+		//	const std::function<bool(T left, T right)>& compare) noexcept
+		//{
+		//	// CSPDO: test it
+		//	if constexpr (!__is_to_stream_writable<std::ostream, T>::value)
+		//	{
+		//		throw template_argument_T_not_writable_to_cout_error<T>{};
+		//	}
+
+		//	std::vector<T> vecDomain{ domain.cbegin(), domain.cend() };
+		//	std::sort(std::execution::par_unseq, vecDomain.begin(), vecDomain.end(), compare);
+		//	return vecDomain;
+		//}
+
+		optCompare<T> m_optCompare;
 		std::vector<T> m_vecDomain;
-		std::function<constexpr bool(T left, T right)> m_funcCompare;
 		size_t m_size_tValueIdx;
 		
 	public:
 		Variable<T>() = delete;
+		
+		Variable<T>(const std::unordered_set<T>& domain) :
+			m_optCompare{ init_compare() },
+			m_vecDomain{ init_domain(domain) },
+			m_funcCompare{ compare },
+			m_size_tValueIdx{ UNASSIGNED }
+		{ }
 
-		// CSPDO: what if std::less<T> doesn't exists?
-		Variable<T>(const std::unordered_set<T>& domain, 
+		/*Variable<T>(const std::unordered_set<T>& domain, 
 			std::function<constexpr bool(T left, T right)> compare = std::less<T>()) :
 			m_vecDomain{ init_domain(domain, compare) }, 
 			m_funcCompare{ compare }, 
 			m_size_tValueIdx{ UNASSIGNED }
-		{ }
+		{ }*/
 
 		~Variable<T>() = default;
 

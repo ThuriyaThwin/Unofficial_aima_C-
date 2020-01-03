@@ -72,7 +72,8 @@ namespace csp
 					T firstValue = firstDomain[i];
 					if (!firstVarWasAssigned)
 					{
-						firstVar->assign(firstValue);
+						firstVar->assignByIdx(i);
+						//firstVar->assign(firstValue);
 					}
 
 					bool secondVarWasAssigned = secondVar->isAssigned();
@@ -80,7 +81,28 @@ namespace csp
 					VariableValueNeighborTriplet<T> variableValueNeighborTriplet =
 						std::make_tuple(std::ref(*firstVar), firstValue, std::ref(*secondVar));
 
-					for (T secondValue : secondVar->getDomain())
+					const std::vector<T>& secondDomain = secondVar->getDomain();
+					for (size_t j = 0; j < secondDomain.size(); ++j)
+					{
+						if (!secondVarWasAssigned)
+						{
+							secondVar->assignByIdx(j);
+						}
+						if (constr.isConsistent())
+						{
+							supportCounter.try_emplace(variableValueNeighborTriplet, 0);
+							++supportCounter[variableValueNeighborTriplet];
+							VariableValuePair<T> secondPair = std::make_pair(std::ref(*secondVar), secondDomain[j]);
+							variableValuePairsSupportedBy.try_emplace(secondPair, std::unordered_set<VariableValuePair<T>>{});
+							variableValuePairsSupportedBy[secondPair].emplace(firstPair);
+						}
+						if (!secondVarWasAssigned)
+						{
+							secondVar->unassign();
+						}
+					}
+
+					/*for (T secondValue : secondVar->getDomain())
 					{
 						if (!secondVarWasAssigned)
 						{
@@ -98,7 +120,7 @@ namespace csp
 						{
 							secondVar->unassign();
 						}
-					}
+					}*/
 
 					if (!firstVarWasAssigned)
 					{

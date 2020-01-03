@@ -85,7 +85,8 @@ namespace csp
 			const std::vector<T>& variableDomain = variable.getDomain();
 			for (size_t i = 0; i < variableDomain.size(); ++i)
 			{
-				variable.assign(variableDomain[i]);
+				variable.assignByIdx(i);
+				//variable.assign(variableDomain[i]);
 				if (sharedConstraint.getConsistentDomainValues(neighbor).empty())
 				{
 					variable.unassign();

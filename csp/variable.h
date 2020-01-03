@@ -4,11 +4,15 @@
 #include "initial_utilities.h"
 
 
+// CSPDO: allow to assign variable by idx?
+
+
 namespace csp
 {
-	template<typename T> class template_argument_T_not_writable_to_cout_error;
+	class template_argument_T_not_writable_to_cout_error;
 	template<typename T> class unassigned_value_extraction_error;
 	template<typename T> class over_assignment_error;
+	template<typename T> class assignment_idx_out_of_range_error;
 	template<typename T> class uncontained_value_error;
 	template<typename T> class domain_alteration_error;
 	
@@ -27,14 +31,14 @@ namespace csp
 		static constexpr size_t UNASSIGNED = std::numeric_limits<size_t>::max();
 
 
-		static optCompare<T> init_compare()
+		static std::optional<std::function<constexpr bool(T left, T right)>> init_compare()
 		{
-			optCompare<T> optCompare;
-
+			// CSPDO: test it
 			static_assert(__is_to_stream_writable<std::ostream, T>::value, "T must be writable to std::cout.");
 
-			if constexpr (__is_comparable_to_T<T>::value &&
-				std::is_same<__T_less_than_operator_return_value<T>, bool>::value)
+			// CSPDO: test it
+			std::optional<std::function<bool(T left, T right)>> optCompare;
+			if constexpr (std::is_same<__T_less_than_operator_return_type<T>, bool>::value)
 			{
 				optCompare = std::less<T>();
 			}
@@ -54,21 +58,67 @@ namespace csp
 			return vecDomain;
 		}
 
-		//static const std::vector<T> init_domain(const std::unordered_set<T>& domain,
-		//	const std::function<bool(T left, T right)>& compare) noexcept
-		//{
-		//	// CSPDO: test it
-		//	if constexpr (!__is_to_stream_writable<std::ostream, T>::value)
-		//	{
-		//		throw template_argument_T_not_writable_to_cout_error<T>{};
-		//	}
+		void assign_for_sorted_domain(T val)
+		{
+			const auto itToBeginDomain = m_vecDomain.cbegin();
+			const auto itToValPosition = std::lower_bound(itToBeginDomain, m_vecDomain.cend(), val);
+			if (*itToValPosition != val)
+			{
+				throw uncontained_value_error<T>{ *this, val};
+			}
+			else
+			{
+				m_size_tValueIdx = itToValPosition - itToBeginDomain;
+			}
+		}
 
-		//	std::vector<T> vecDomain{ domain.cbegin(), domain.cend() };
-		//	std::sort(std::execution::par_unseq, vecDomain.begin(), vecDomain.end(), compare);
-		//	return vecDomain;
-		//}
+		void assign_for_unsorted_domain(T val)
+		{
+			size_t idx = 0;
+			bool isValFound = false;
+			for (; idx < m_vecDomain.size(); ++idx)
+			{
+				if (m_vecDomain[idx] == val)
+				{
+					isValFound = true;
+					break;
+				}
+			}
 
-		optCompare<T> m_optCompare;
+			if (!isValFound)
+			{
+				throw uncontained_value_error<T>{ *this, val };
+			}
+			else
+			{
+				m_size_tValueIdx = idx;
+			}
+		}
+
+		bool set_subset_domain_for_unsorted_domain(const std::vector<T>& vecSubsetDomain)
+		{
+			bool wasDomainShortened = false;
+			if (m_vecDomain.size() <= vecSubsetDomain.size())
+			{
+				return wasDomainShortened;
+			}
+
+			std::unordered_set<T> usetDomain{ m_vecDomain.cbegin(), m_vecDomain.cend() };
+			for (T value : vecSubsetDomain)
+			{
+				if (!usetDomain.count(value))
+				{
+					return wasDomainShortened;
+				}
+			}
+
+			m_vecDomain = vecSubsetDomain;
+			m_size_tValueIdx = UNASSIGNED;
+			wasDomainShortened = true;
+			return wasDomainShortened;
+		}
+
+		std::optional<std::function<constexpr bool(T left, T right)>> m_optCompare;
 		std::vector<T> m_vecDomain;
 		size_t m_size_tValueIdx;
 		
@@ -78,22 +128,14 @@ namespace csp
 		Variable<T>(const std::unordered_set<T>& domain) :
 			m_optCompare{ init_compare() },
 			m_vecDomain{ init_domain(domain) },
-			m_funcCompare{ compare },
 			m_size_tValueIdx{ UNASSIGNED }
 		{ }
 
-		/*Variable<T>(const std::unordered_set<T>& domain, 
-			std::function<constexpr bool(T left, T right)> compare = std::less<T>()) :
-			m_vecDomain{ init_domain(domain, compare) }, 
-			m_funcCompare{ compare }, 
-			m_size_tValueIdx{ UNASSIGNED }
-		{ }*/
-
 		~Variable<T>() = default;
 
-		Variable<T>(const Variable<T>& otherVar) : 
+		Variable<T>(const Variable<T>& otherVar) :
+			m_optCompare{ otherVar.m_optCompare },
 			m_vecDomain{ otherVar.m_vecDomain }, 
-			m_funcCompare{ otherVar.m_funcCompare }, 
 			m_size_tValueIdx{ otherVar.m_size_tValueIdx }
 		{ }
 
@@ -103,18 +145,20 @@ namespace csp
 		}
 
 		Variable<T>(Variable<T>&& otherVar) noexcept : 
+			m_optCompare{ std::move(otherVar.m_optCompare) },
 			m_vecDomain{ std::move(otherVar.m_vecDomain) },
-			m_funcCompare{ std::move(otherVar.m_funcCompare) },
 			m_size_tValueIdx{ otherVar.m_size_tValueIdx }
 		{ }
 
 		Variable<T>& operator=(Variable<T>&& otherVar) noexcept
 		{
+			std::swap(m_optCompare, otherVar.m_optCompare);
 			std::swap(m_vecDomain, otherVar.m_vecDomain);
-			std::swap(m_funcCompare, otherVar.m_funcCompare);
 			std::swap(m_size_tValueIdx, otherVar.m_size_tValueIdx);
 			return *this;
 		}
+
+		constexpr bool isDomainSorted() { return m_optCompare.has_value(); }
 
 		constexpr bool isAssigned() const noexcept { return m_size_tValueIdx != UNASSIGNED; }
 
@@ -129,21 +173,36 @@ namespace csp
 
 		void unassign() noexcept { m_size_tValueIdx = UNASSIGNED; }
 
-		void assign(T val)
+		void assignByIdx(size_t assignmentIdx)
+		{
+			if (m_vecDomain.size() <= assignmentIdx)
+			{
+				throw assignment_idx_out_of_range_error<T>{ *this, std::to_string(assignmentIdx) }
+			}
+			if (this->isAssigned())
+			{
+				throw over_assignment_error<T>{ *this };
+			}
+
+			m_size_tValueIdx = assignmentIdx;
+		}
+
+		// CSPDO: perhaps using rvalue reference and std::forward<T>(val) is better, 
+		// but then would have to call assign like this: var.assign(std::move(value)) whenever calling the assign method
+		void assign(T val)	// CSPDO: change name to assignByValue
 		{
 			if (this->isAssigned())
 			{
 				throw over_assignment_error<T>{ *this };
 			}
-			const auto itToBeginDomain = m_vecDomain.cbegin();
-			const auto itToValPosition = std::lower_bound(itToBeginDomain, m_vecDomain.cend(), val);
-			if (*itToValPosition != val)
+			
+			if (m_optCompare)
 			{
-				throw uncontained_value_error<T>{ *this, val};
+				this->assign_for_sorted_domain(val);
 			}
 			else
 			{
-				m_size_tValueIdx = itToValPosition - itToBeginDomain;
+				this->assign_for_unsorted_domain(val);
 			}
 		}
 
@@ -165,6 +224,7 @@ namespace csp
 			return m_vecDomain;
 		}
 
+		// CSPDO: change name to removeFromDomain by idx
 		void removeFromDomain(size_t idx)
 		{
 			if (this->isAssigned())
@@ -175,7 +235,7 @@ namespace csp
 			m_size_tValueIdx = UNASSIGNED;
 		}
 
-		bool setSubsetDomain(const std::vector<T>& vecSubsetDomain)
+		bool setSubsetDomain(const std::vector<T>& vecSubsetDomain, bool subsetDomainIsSorted = true)
 		{
 			bool wasDomainShortened = false;
 			if (this->isAssigned())
@@ -183,24 +243,31 @@ namespace csp
 				throw domain_alteration_error<T>{ *this };
 			}
 
-			if (m_vecDomain.size() <= vecSubsetDomain.size())
+			if (m_optCompare)
 			{
-				return wasDomainShortened;
-			}
-
-			std::unordered_set<T> usetDomain{ m_vecDomain.cbegin(), m_vecDomain.cend() };
-			for (T value : vecSubsetDomain)
-			{
-				if (!usetDomain.count(value))
+				if (!subsetDomainIsSorted)
 				{
-					return wasDomainShortened;
+					std::vector<T>& noConstSubsetDomain = const_cast<std::vector<T>&>(vecSubsetDomain);
+					std::sort(std::execution::par_unseq, noConstSubsetDomain.begin(), noConstSubsetDomain.end());
+				}
+
+				if (std::includes(std::execution::par_unseq, 
+					m_vecDomain.cbegin(), m_vecDomain.cend(), vecSubsetDomain.cbegin(), vecSubsetDomain.cend()))
+				{
+					m_vecDomain = vecSubsetDomain;
+					wasDomainShortened = true;
 				}
 			}
+			else
+			{
+				wasDomainShortened = this->set_subset_domain_for_unsorted_domain(vecSubsetDomain);
+			}
 
-			m_vecDomain = vecSubsetDomain;
-			std::sort(std::execution::par_unseq, m_vecDomain.begin(), m_vecDomain.end(), m_funcCompare);
-			m_size_tValueIdx = UNASSIGNED;
-			wasDomainShortened = true;
+			if (wasDomainShortened)
+			{
+				m_size_tValueIdx = UNASSIGNED;
+			}
+			
 			return wasDomainShortened;
 		}
 
@@ -267,12 +334,11 @@ namespace csp
 	};
 
 
-	template<typename T>
 	class template_argument_T_not_writable_to_cout_error : public std::invalid_argument
 	{
 	public:
 		template_argument_T_not_writable_to_cout_error() :
-			invalid_argument{ "Given template argument T with the name: " + typeid(T).name() + " is not writable to std::cout." }
+			invalid_argument{ "Given template argument T must be writable to std::cout." }
 		{ }
 	};
 
@@ -294,6 +360,16 @@ namespace csp
 		over_assignment_error(const Variable<T>& var) : 
 			logic_error{ "Over-assignment of an assigned variable: " + var.toString() + 
 			", variable must be unassigned before assignment." }
+		{ }
+	};
+
+	template<typename T>
+	class assignment_idx_out_of_range_error : public std::out_of_range
+	{
+	public:
+		assignment_idx_out_of_range_error(const Variable<T>& var, const std::string& assignmentIdx) :
+			out_of_range{ "Assignment index: " + assignmentIdx + " of variable: " + var.toString() +
+			" , is bigger than variable's domain size." }
 		{ }
 	};
 

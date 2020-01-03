@@ -24,6 +24,7 @@ namespace csp
 
 		const std::vector<Ref<Variable<T>>> unassignedVars = constraintProblem.getUnassignedVariables();
 		Variable<T>& selectedVar = unassignedVars.back();
+		const std::vector<T>& selectedDomain = selectedVar.getDomain();
 		for (T value : selectedVar.getDomain())
 		{
 			selectedVar.assign(value);

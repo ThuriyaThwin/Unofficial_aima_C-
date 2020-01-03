@@ -40,7 +40,7 @@ namespace csp
 			bool varWasAssigned = var.isAssigned();
 			if (!varWasAssigned)
 			{
-				var.assign(varDomain[i]);
+				var.assignByIdx(i);
 			}
 
 			bool currRevised = false;
@@ -48,16 +48,16 @@ namespace csp
 			std::vector<T> consistentNeighborValues{ neighborDomain.size() };
 			bool neighborWasAssigned = neighbor.isAssigned();
 
-			for (size_t i = 0; i < neighborDomain.size(); ++i)
+			for (size_t j = 0; j < neighborDomain.size(); ++j)
 			{
 				if (!neighborWasAssigned)
 				{
-					neighbor.assign(neighborDomain[i]);
+					neighbor.assignByIdx(j);
 				}
 
 				if (!constraintProblem.getConsistentDomain(diffVar).empty())
 				{
-					consistentNeighborValues.emplace_back(neighborDomain[i]);
+					consistentNeighborValues.emplace_back(neighborDomain[j]);
 				}
 				else
 				{
@@ -78,7 +78,7 @@ namespace csp
 
 			if (currRevised)
 			{
-				var.removeFromDomain(i);
+				var.removeFromDomainByIdx(i);
 				neighbor.setSubsetDomain(consistentNeighborValues);
 			}
 		}

@@ -125,33 +125,33 @@ namespace cspTests
 		TEST_METHOD(TestIsCompletelyAssigned)
 		{
 			Assert::IsFalse(constraint1.isCompletelyAssigned());
-			var1.assign(1.0);
+			var1.assignByValue(1.0);
 			Assert::IsFalse(constraint1.isCompletelyAssigned());
-			var2.assign(2.5);
+			var2.assignByValue(2.5);
 			Assert::IsFalse(constraint1.isCompletelyAssigned());
-			var3.assign(3.7);
+			var3.assignByValue(3.7);
 			Assert::IsTrue(constraint1.isCompletelyAssigned());
 		}
 
 		TEST_METHOD(TestIsConsistent)
 		{
 			Assert::IsTrue(constraint1.isConsistent());
-			var1.assign(1.0);
+			var1.assignByValue(1.0);
 			Assert::IsTrue(constraint1.isConsistent());
-			var2.assign(2.5);
+			var2.assignByValue(2.5);
 			Assert::IsTrue(constraint1.isConsistent());
-			var3.assign(3.7);
+			var3.assignByValue(3.7);
 			Assert::IsTrue(constraint1.isConsistent());
 		}
 
 		TEST_METHOD(TestIsSatisfied)
 		{
 			Assert::IsFalse(constraint1.isSatisfied());
-			var1.assign(1.0);
+			var1.assignByValue(1.0);
 			Assert::IsFalse(constraint1.isSatisfied());
-			var2.assign(2.5);
+			var2.assignByValue(2.5);
 			Assert::IsFalse(constraint1.isSatisfied());
-			var3.assign(3.7);
+			var3.assignByValue(3.7);
 			Assert::IsTrue(constraint1.isSatisfied());
 		}
 
@@ -167,8 +167,8 @@ namespace cspTests
 		
 		TEST_METHOD(TestgetConsistentDomainValues)
 		{
-			var1.assign(3.7);
-			var2.assign(3.7);
+			var1.assignByValue(3.7);
+			var2.assignByValue(3.7);
 			const std::vector<double> consistentDomain = constraint2.getConsistentDomainValues(var3);
 			Assert::IsTrue(consistentDomain.size() == 1);
 			Assert::AreEqual(consistentDomain.front(), 3.7);

@@ -7,14 +7,14 @@
 namespace csp
 {
 	template<typename T>
-	using AssignmentHistory = std::deque<std::pair<Ref<Variable<T>>, std::optional<T>>>;
-
-	template <typename T>
-	using VariableValuePair = std::pair<Ref<csp::Variable<T>>, T>;
+	using Assignment = std::unordered_map<Ref<Variable<T>>, size_t>;
 
 	template<typename T>
-	using Assignment = std::unordered_map<Ref<Variable<T>>, T>;
+	using AssignmentHistory = std::deque<std::pair<Ref<Variable<T>>, std::optional<T>>>;
+}
 
+namespace csp
+{
 	template<typename T> class duplicate_constraint_error;
 
 	template <typename T>
@@ -188,7 +188,7 @@ namespace csp
 				{
 					if (!pOrigVarToCopiedVarIdx.count(&var))
 					{
-						copiedVars.push_back(var);
+						copiedVars.emplace_back(var);
 						pOrigVarToCopiedVarIdx.emplace(&var, copiedVars.size() - 1);
 						constrCopiedVarRefs.emplace_back(copiedVars.back());
 					}
@@ -198,7 +198,7 @@ namespace csp
 					}
 				}
 
-				copiedConstraints.push_back({ constrCopiedVarRefs, constr.getConstraintEvaluator() });
+				copiedConstraints.emplace_back(constrCopiedVarRefs, constr.getConstraintEvaluator());
 				copiedConstraintRefs.emplace_back(copiedConstraints.back());
 			}
 
@@ -449,12 +449,14 @@ namespace csp
 
 		const Assignment<T> getCurrentAssignment() const noexcept
 		{
-			std::unordered_map<Ref<Variable<T>>, T> currAssignment;
+			//std::unordered_map<Ref<Variable<T>>, T> currAssignment;
+			std::unordered_map<Ref<Variable<T>>, size_t> currAssignment;
 			for (Variable<T>& var : m_vecVariables)
 			{
 				if (var.isAssigned())
 				{
-					currAssignment.emplace(var, var.getValue());
+					//currAssignment.emplace(var, var.getValue());
+					currAssignment.emplace(var, var.getAssignmentIdx());
 				}
 			}
 			return currAssignment;
@@ -462,19 +464,34 @@ namespace csp
 
 		void assignFromAssignment(const Assignment<T>& assignment) noexcept
 		{
-			for (const std::pair<Ref<Variable<T>>, T>& varToVal : assignment)
+			for (const std::pair<Ref<Variable<T>>, size_t>& varToAssignmentIdx : assignment)
+			{
+				Variable<T>& variable = varToAssignmentIdx.first.get();
+				size_t assignmentIdx = varToAssignmentIdx.second;
+				if (!variable.isAssigned())
+				{
+					variable.assignByIdx(assignmentIdx);
+				}
+				else if (variable.getAssignmentIdx() != assignmentIdx)
+				{
+					variable.unassign();
+					variable.assignByIdx(assignmentIdx);
+				}
+			}
+
+			/*for (const std::pair<Ref<Variable<T>>, T>& varToVal : assignment)
 			{
 				Variable<T>& variable = varToVal.first.get();
 				if (!variable.isAssigned())
 				{
-					variable.assign(varToVal.second);
+					variable.assignByValue(varToVal.second);
 				}
 				else if (variable.getValue() != varToVal.second)
 				{
 					variable.unassign();
-					variable.assign(varToVal.second);
+					variable.assignByValue(varToVal.second);
 				}
-			}
+			}*/
 		}
 
 		// CSPDO: write test
@@ -590,13 +607,14 @@ namespace std
 		size_t operator()(const csp::Assignment<T>& assignment) const
 		{
 			hash<T> valueHasher;
-			hash<std::reference_wrapper<csp::Variable<T>>> variableHasher;
+			hash<std::reference_wrapper<csp::Variable<T>>> variableRefHasher;
 			double hashKey = 0;
 
-			for (const std::pair<std::reference_wrapper<csp::Variable<T>>, T>& varToVal : assignment)
+			for (const std::pair<std::reference_wrapper<csp::Variable<T>>, size_t>& varRefToAssignmentIdx : assignment)
 			{
-				double variableHashValue = static_cast<double>(variableHasher(varToVal.first));
-				double currHashValue = variableHashValue / valueHasher(varToVal.second);
+				double variableHashValue = static_cast<double>(variableRefHasher(varRefToAssignmentIdx.first));
+				const std::vector<T>& domain = varRefToAssignmentIdx.first.get().getDomain();
+				double currHashValue = variableHashValue / valueHasher(domain[varRefToAssignmentIdx.second]);
 				hashKey += currHashValue;
 			}
 			return static_cast<size_t>(hashKey);

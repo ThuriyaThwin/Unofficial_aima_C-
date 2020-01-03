@@ -23,7 +23,7 @@ namespace cspTests
 		TEST_METHOD(TestCopyCtor)
 		{
 			csp::Variable<double> var2{ usetOriginalDomain };
-			var2.assign(1.0);
+			var2.assignByValue(1.0);
 			csp::Variable<double> var4{ var2 };
 			Assert::IsTrue(var2.getValue() == var4.getValue());
 			std::unordered_set<double> var2Domain{ var2.getDomain().cbegin(), var2.getDomain().cend() };
@@ -34,9 +34,9 @@ namespace cspTests
 		TEST_METHOD(TestCopyAssignmentOperator)
 		{
 			csp::Variable<double> var2{ usetOriginalDomain };
-			var2.assign(1.0);
+			var2.assignByValue(1.0);
 			csp::Variable<double> var3{ {1, 2, 3, 4, 5} };
-			var3.assign(5);
+			var3.assignByValue(5);
 			var3 = var2;
 			Assert::IsTrue(var3.getDomain().size() == 10);
 			Assert::IsTrue(var3.getValue() == 1.0);
@@ -45,7 +45,7 @@ namespace cspTests
 		TEST_METHOD(TestMoveCtor)
 		{
 			csp::Variable<double> var7{ usetOriginalDomain };
-			var7.assign(1.0);
+			var7.assignByValue(1.0);
 			csp::Variable<double> var8{ std::move(var7) };
 			Assert::IsTrue(var7.getDomain().empty());
 			Assert::IsTrue(var8.getDomain().size() == 10);
@@ -55,9 +55,9 @@ namespace cspTests
 		TEST_METHOD(TestMoveAssignmentOperator)
 		{
 			csp::Variable<double> var2{ usetOriginalDomain };
-			var2.assign(2.5);
+			var2.assignByValue(2.5);
 			csp::Variable<double> var3{ {1, 2, 3, 4, 5} };
-			var3.assign(5);
+			var3.assignByValue(5);
 			var2 = std::move(var3);
 			Assert::IsTrue(var2.getDomain().size() == 5);
 			Assert::IsTrue(var2.getValue() == 5);
@@ -66,20 +66,20 @@ namespace cspTests
 		TEST_METHOD(TestAssign)
 		{
 			Assert::IsFalse(var1.isAssigned());
-			var1.assign(3.7);
+			var1.assignByValue(3.7);
 			Assert::IsTrue(var1.isAssigned());
 		}
 
 		TEST_METHOD(TestUnassign)
 		{
-			var1.assign(3.7);
+			var1.assignByValue(3.7);
 			var1.unassign();
 			Assert::IsFalse(var1.isAssigned());
 		}
 
 		TEST_METHOD(TestGetValue)
 		{
-			var1.assign(3.7);
+			var1.assignByValue(3.7);
 			Assert::AreEqual(var1.getValue(), 3.7);
 		}
 
@@ -110,7 +110,7 @@ namespace cspTests
 			const std::vector<double>& domain = var2.getDomain();
 			size_t idxOfValToDelete = 3;
 			double valToDelete = domain[idxOfValToDelete];
-			var2.removeFromDomain(idxOfValToDelete);
+			var2.removeFromDomainByIdx(idxOfValToDelete);
 			Assert::IsTrue(std::find(domain.cbegin(), domain.cend(), valToDelete) == domain.cend());
 		}
 
@@ -130,11 +130,11 @@ namespace cspTests
 
 		TEST_METHOD(TestOverAssignmentError)
 		{
-			var1.assign(3.7);
-			Assert::ExpectException<csp::over_assignment_error<double>>([&]() -> void { var1.assign(2.5); });
+			var1.assignByValue(3.7);
+			Assert::ExpectException<csp::over_assignment_error<double>>([&]() -> void { var1.assignByValue(2.5); });
 			try
 			{
-				var1.assign(2.5);
+				var1.assignByValue(2.5);
 			}
 			catch (csp::over_assignment_error<double>& excep)
 			{
@@ -145,10 +145,10 @@ namespace cspTests
 
 		TEST_METHOD(TestUncontainedValueError)
 		{
-			Assert::ExpectException<csp::uncontained_value_error<double>>([&]() -> void { var1.assign(-1.5); });
+			Assert::ExpectException<csp::uncontained_value_error<double>>([&]() -> void { var1.assignByValue(-1.5); });
 			try
 			{
-				var1.assign(-1.5);
+				var1.assignByValue(-1.5);
 			}
 			catch (csp::uncontained_value_error<double>& excep)
 			{
@@ -159,7 +159,7 @@ namespace cspTests
 
 		TEST_METHOD(TestRemoveFromDomain)
 		{
-			var1.removeFromDomain(6);
+			var1.removeFromDomainByIdx(6);
 			const std::vector<double>& vecDomain = var1.getDomain();
 			Assert::IsTrue(vecDomain.size() == 9);
 		}

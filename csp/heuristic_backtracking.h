@@ -45,7 +45,7 @@ namespace csp
 		const std::vector<T> sortedDomain = optDomainSorter ? (*optDomainSorter)(constraintProblem, selectedVar) : selectedVar.getDomain();
 		for (T value : sortedDomain)
 		{
-			selectedVar.assign(value);
+			selectedVar.assignByValue(value);
 			if (writeAssignmentHistory)
 			{
 				assignmentHistory.emplace_back(selectedVar, std::optional<T>{value});
@@ -117,7 +117,7 @@ namespace csp
 		const std::vector<T> sortedDomain = optDomainSorter ? (*optDomainSorter)(constraintProblem, selectedVar) : selectedVar.getDomain();
 		for (T value : sortedDomain)
 		{
-			selectedVar.assign(value);
+			selectedVar.assignByValue(value);
 
 			if (optInference && (*optInference)(constraintProblem, selectedVar))
 			{

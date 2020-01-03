@@ -47,16 +47,6 @@ namespace csp
 			}
 		}
 
-		std::optional<T> get_variable_optional_value(Variable<T>& var) const noexcept
-		{
-			std::optional<T> optValue;
-			if (var.isAssigned())
-			{
-				optValue = var.getValue();
-			}
-			return optValue;
-		}
-
 		std::unordered_set<Variable<T>*> m_usetVariableAddresses;
 		std::vector<Ref<Variable<T>>> m_vecVariables;
 		using ConstraintEvaluator = std::function<bool(const std::vector<T>& assignedValues)>;
@@ -152,8 +142,9 @@ namespace csp
 		const std::vector<T> getConsistentDomainValues(Variable<T>& var) const
 		{
 			this->verify_variable_is_contained(var);
-			std::optional<T> optValue = this->get_variable_optional_value(var);
-			if (optValue)
+
+			size_t assignmentIdx = var.getAssignmentIdx();
+			if (assignmentIdx != UNASSIGNED)
 			{
 				var.unassign();
 			}
@@ -161,20 +152,21 @@ namespace csp
 			std::vector<T> consistentDomain;
 			const std::vector<T>& domain = var.getDomain();
 			consistentDomain.reserve(domain.size());
-			for (T value : domain)
+			for (size_t i = 0; i < domain.size(); ++i)
 			{
-				var.assign(value);
+				var.assignByIdx(i);
 				if (this->isConsistent())
 				{
-					consistentDomain.emplace_back(value);
+					consistentDomain.emplace_back(domain[i]);
 				}
 				var.unassign();
 			}
 
-			if (optValue)
+			if (assignmentIdx != UNASSIGNED)
 			{
-				var.assign(*optValue);
+				var.assignByIdx(assignmentIdx);
 			}
+
 			return consistentDomain;
 		}
 

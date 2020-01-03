@@ -42,6 +42,7 @@ namespace csp
 				bestFitness = currBestFitness;
 				Assignment<T>& bestIndividual = scoreToIndividualMap.crbegin()->second;
 				*pBestIndividual = bestIndividual;
+				// CSPDO: delete this comment?
 				//*pBestIndividual = (scoreToIndividualMap.crbegin()->second).get();
 			}
 		}

@@ -86,11 +86,10 @@ namespace csp
 			for (size_t i = 0; i < variableDomain.size(); ++i)
 			{
 				variable.assignByIdx(i);
-				//variable.assign(variableDomain[i]);
 				if (sharedConstraint.getConsistentDomainValues(neighbor).empty())
 				{
 					variable.unassign();
-					variable.removeFromDomain(i);
+					variable.removeFromDomainByIdx(i);
 					revised = true;
 				}
 				variable.unassign();

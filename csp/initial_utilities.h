@@ -19,6 +19,8 @@ namespace csp
 {
 	template <typename U>
 	using Ref = std::reference_wrapper<U>;
+
+	static constexpr size_t UNASSIGNED = std::numeric_limits<size_t>::max();
 }
 
 namespace csp

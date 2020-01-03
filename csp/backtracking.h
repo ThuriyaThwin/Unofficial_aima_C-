@@ -25,12 +25,12 @@ namespace csp
 		const std::vector<Ref<Variable<T>>> unassignedVars = constraintProblem.getUnassignedVariables();
 		Variable<T>& selectedVar = unassignedVars.back();
 		const std::vector<T>& selectedDomain = selectedVar.getDomain();
-		for (T value : selectedVar.getDomain())
+		for (size_t i = 0; i < selectedDomain.size(); ++i)
 		{
-			selectedVar.assign(value);
+			selectedVar.assignByIdx(i);
 			if (writeAssignmentHistory)
 			{
-				assignmentHistory.emplace_back(selectedVar, std::optional<T>{value});
+				assignmentHistory.emplace_back(selectedVar, std::optional<T>{ selectedDomain[i] });
 			}
 
 			if (__backtrackingSolver<T>(constraintProblem, assignmentHistory, writeAssignmentHistory))
@@ -73,9 +73,10 @@ namespace csp
 
 		const std::vector<Ref<Variable<T>>> unassignedVars = constraintProblem.getUnassignedVariables();
 		Variable<T>& selectedVar = unassignedVars.back();
-		for (T value : selectedVar.getDomain())
+		const std::vector<T>& selectedDomain = selectedVar.getDomain();
+		for (size_t i = 0; i < selectedDomain.size(); ++i)
 		{
-			selectedVar.assign(value);
+			selectedVar.assignByIdx(i);
 			__backtrackingSolver_findAllSolutions<T>(constraintProblem, solutions);
 			selectedVar.unassign();
 		}

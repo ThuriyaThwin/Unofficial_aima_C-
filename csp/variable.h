@@ -4,9 +4,6 @@
 #include "initial_utilities.h"
 
 
-// CSPDO: allow to assign variable by idx?
-
-
 namespace csp
 {
 	class template_argument_T_not_writable_to_cout_error;
@@ -28,9 +25,6 @@ namespace csp
 	class Variable final
 	{
 	private:
-		static constexpr size_t UNASSIGNED = std::numeric_limits<size_t>::max();
-
-
 		static std::optional<std::function<constexpr bool(T left, T right)>> init_compare()
 		{
 			// CSPDO: test it
@@ -58,27 +52,27 @@ namespace csp
 			return vecDomain;
 		}
 
-		void assign_for_sorted_domain(T val)
+		size_t get_assignment_idx_for_value_in_sorted_domain(T value) const
 		{
 			const auto itToBeginDomain = m_vecDomain.cbegin();
-			const auto itToValPosition = std::lower_bound(itToBeginDomain, m_vecDomain.cend(), val);
-			if (*itToValPosition != val)
+			const auto itToValPosition = std::lower_bound(itToBeginDomain, m_vecDomain.cend(), value);
+			if (*itToValPosition != value)
 			{
-				throw uncontained_value_error<T>{ *this, val};
+				throw uncontained_value_error<T>{ *this, value};
 			}
 			else
 			{
-				m_size_tValueIdx = itToValPosition - itToBeginDomain;
+				return itToValPosition - itToBeginDomain;
 			}
 		}
 
-		void assign_for_unsorted_domain(T val)
+		size_t get_assignment_idx_for_value_in_unsorted_domain(T value) const
 		{
 			size_t idx = 0;
 			bool isValFound = false;
 			for (; idx < m_vecDomain.size(); ++idx)
 			{
-				if (m_vecDomain[idx] == val)
+				if (m_vecDomain[idx] == value)
 				{
 					isValFound = true;
 					break;
@@ -87,11 +81,11 @@ namespace csp
 
 			if (!isValFound)
 			{
-				throw uncontained_value_error<T>{ *this, val };
+				throw uncontained_value_error<T>{ *this, value };
 			}
 			else
 			{
-				m_size_tValueIdx = idx;
+				return idx;
 			}
 		}
 
@@ -171,13 +165,15 @@ namespace csp
 			return m_vecDomain[m_size_tValueIdx];
 		}
 
+		constexpr size_t getAssignmentIdx() const noexcept { return m_size_tValueIdx; }
+
 		void unassign() noexcept { m_size_tValueIdx = UNASSIGNED; }
 
 		void assignByIdx(size_t assignmentIdx)
 		{
 			if (m_vecDomain.size() <= assignmentIdx)
 			{
-				throw assignment_idx_out_of_range_error<T>{ *this, std::to_string(assignmentIdx) }
+				throw assignment_idx_out_of_range_error<T>{ *this, std::to_string(assignmentIdx) };
 			}
 			if (this->isAssigned())
 			{
@@ -189,7 +185,7 @@ namespace csp
 
 		// CSPDO: perhaps using rvalue reference and std::forward<T>(val) is better, 
 		// but then would have to call assign like this: var.assign(std::move(value)) whenever calling the assign method
-		void assign(T val)	// CSPDO: change name to assignByValue
+		void assignByValue(T val)
 		{
 			if (this->isAssigned())
 			{
@@ -198,11 +194,23 @@ namespace csp
 			
 			if (m_optCompare)
 			{
-				this->assign_for_sorted_domain(val);
+				m_size_tValueIdx = this->get_assignment_idx_for_value_in_sorted_domain(val);
 			}
 			else
 			{
-				this->assign_for_unsorted_domain(val);
+				m_size_tValueIdx = this->get_assignment_idx_for_value_in_unsorted_domain(val);
+			}
+		}
+
+		constexpr size_t getAssignmentIdxOfValue(T value) const
+		{
+			if (m_optCompare)
+			{
+				return this->get_assignment_idx_for_value_in_sorted_domain(value);
+			}
+			else
+			{
+				return this->get_assignment_idx_for_value_in_unsorted_domain(value);
 			}
 		}
 
@@ -224,8 +232,7 @@ namespace csp
 			return m_vecDomain;
 		}
 
-		// CSPDO: change name to removeFromDomain by idx
-		void removeFromDomain(size_t idx)
+		void removeFromDomainByIdx(size_t idx)
 		{
 			if (this->isAssigned())
 			{

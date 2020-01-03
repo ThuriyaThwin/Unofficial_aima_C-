@@ -20,7 +20,7 @@ namespace csp
 		const std::vector<T> consistentDomain = constraintProb.getConsistentDomain(var);
 		for (T value : consistentDomain)
 		{
-			var.assign(value);
+			var.assignByValue(value);
 			size_t neighborDomainLengthsSum = 0;
 			for (Variable<T>& unassignedNeigh : unassignedNeighbors)
 			{

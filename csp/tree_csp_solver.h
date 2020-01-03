@@ -93,10 +93,10 @@ namespace csp
 			const std::vector<T>& currDomain = currVariable.getDomain();
 			for (size_t j = 0; j < currDomain.size(); ++j)
 			{
-				currVariable.assign(currDomain[j]);
+				currVariable.assignByIdx(j);
 				if (constraintProblem.getConsistentDomain(topologicalySortedUnassginedVars[i - 1]).empty())
 				{
-					currVariable.removeFromDomain(j);
+					currVariable.removeFromDomainByIdx(j);
 				}
 				currVariable.unassign();
 			}
@@ -114,7 +114,7 @@ namespace csp
 				return assignmentHistory;
 			}
 			T value = consistentDomain.back();
-			var.assign(value);
+			var.assignByValue(value);
 			if (writeAssignmentHistory)
 			{
 				assignmentHistory.emplace_back(var, std::optional<T>{ value });

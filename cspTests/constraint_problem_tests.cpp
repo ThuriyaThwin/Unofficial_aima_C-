@@ -149,7 +149,7 @@ namespace cspTests
 		TEST_METHOD(TestIsCompletelyUnassigned)
 		{
 			Assert::IsTrue(graphColoringProb.isCompletelyUnassigned());
-			NameToVarUMap.at("sa").assign("Green");
+			NameToVarUMap.at("sa").assignByValue("Green");
 			Assert::IsFalse(graphColoringProb.isCompletelyUnassigned());
 			NameToVarUMap.at("sa").unassign();
 		}
@@ -157,7 +157,7 @@ namespace cspTests
 		TEST_METHOD(TestIsConsistentlyAssigned)
 		{
 			Assert::IsTrue(graphColoringProb.isConsistentlyAssigned());
-			NameToVarUMap.at("t").assign("Red");
+			NameToVarUMap.at("t").assignByValue("Red");
 			Assert::IsTrue(graphColoringProb.isConsistentlyAssigned());
 			NameToVarUMap.at("t").unassign();
 		}
@@ -167,7 +167,7 @@ namespace cspTests
 			Assert::IsFalse(graphColoringProb.isCompletelyAssigned());
 			for (std::pair<const std::string, csp::Variable<std::string>>& nameToVar : NameToVarUMap)
 			{
-				nameToVar.second.assign("Green");
+				nameToVar.second.assignByValue("Green");
 			}
 			Assert::IsTrue(graphColoringProb.isCompletelyAssigned());
 		}
@@ -177,17 +177,17 @@ namespace cspTests
 			Assert::IsFalse(graphColoringProb.isCompletelyConsistentlyAssigned());
 			for (std::pair<const std::string, csp::Variable<std::string>>& nameToVar : NameToVarUMap)
 			{
-				nameToVar.second.assign("Green");
+				nameToVar.second.assignByValue("Green");
 			}
 			Assert::IsFalse(graphColoringProb.isCompletelyConsistentlyAssigned());
 			graphColoringProb.unassignAllVariables();
-			NameToVarUMap.at("wa").assign("Red");
-			NameToVarUMap.at("nt").assign("Green");
-			NameToVarUMap.at("sa").assign("Blue");
-			NameToVarUMap.at("q").assign("Red");
-			NameToVarUMap.at("nsw").assign("Green");
-			NameToVarUMap.at("v").assign("Red");
-			NameToVarUMap.at("t").assign("Blue");
+			NameToVarUMap.at("wa").assignByValue("Red");
+			NameToVarUMap.at("nt").assignByValue("Green");
+			NameToVarUMap.at("sa").assignByValue("Blue");
+			NameToVarUMap.at("q").assignByValue("Red");
+			NameToVarUMap.at("nsw").assignByValue("Green");
+			NameToVarUMap.at("v").assignByValue("Red");
+			NameToVarUMap.at("t").assignByValue("Blue");
 			Assert::IsTrue(graphColoringProb.isCompletelyConsistentlyAssigned());
 		}
 
@@ -208,9 +208,9 @@ namespace cspTests
 
 		TEST_METHOD(TestGetAssignedVariables)
 		{
-			NameToVarUMap.at("q").assign("Red");
-			NameToVarUMap.at("t").assign("Blue");
-			NameToVarUMap.at("v").assign("Red");
+			NameToVarUMap.at("q").assignByValue("Red");
+			NameToVarUMap.at("t").assignByValue("Blue");
+			NameToVarUMap.at("v").assignByValue("Red");
 			std::unordered_set<std::reference_wrapper<csp::Variable<std::string>>> assignedVars{ NameToVarUMap.at("q"), NameToVarUMap.at("t"),
 				NameToVarUMap.at("v") };
 			const std::vector<std::reference_wrapper<csp::Variable<std::string>>> graphProbAssignedVarsVec = graphColoringProb.getAssignedVariables();
@@ -221,9 +221,9 @@ namespace cspTests
 
 		TEST_METHOD(TestGetUnassignedVariables)
 		{
-			NameToVarUMap.at("q").assign("Red");
-			NameToVarUMap.at("t").assign("Blue");
-			NameToVarUMap.at("v").assign("Red");
+			NameToVarUMap.at("q").assignByValue("Red");
+			NameToVarUMap.at("t").assignByValue("Blue");
+			NameToVarUMap.at("v").assignByValue("Red");
 			const std::unordered_set<std::reference_wrapper<csp::Variable<std::string>>> unassignedVars{ NameToVarUMap.at("nt"), NameToVarUMap.at("nsw"),
 				NameToVarUMap.at("sa"), NameToVarUMap.at("wa") };
 			const std::vector<std::reference_wrapper<csp::Variable<std::string>>> graphProbUnassignedVarsVec = graphColoringProb.getUnassignedVariables();
@@ -250,8 +250,8 @@ namespace cspTests
 
 		TEST_METHOD(TestGetAssignedNeighbors)
 		{
-			NameToVarUMap.at("wa").assign("Red");
-			NameToVarUMap.at("q").assign("Blue");
+			NameToVarUMap.at("wa").assignByValue("Red");
+			NameToVarUMap.at("q").assignByValue("Blue");
 			const std::unordered_set<std::reference_wrapper<csp::Variable<std::string>>> saAssignedNeighbors{ NameToVarUMap.at("q"),
 				NameToVarUMap.at("wa") };
 			const std::vector<std::reference_wrapper<csp::Variable<std::string>>> saAssignedNeighborsProbVec = graphColoringProb.getAssignedNeighbors(NameToVarUMap.at("sa"));
@@ -262,8 +262,8 @@ namespace cspTests
 
 		TEST_METHOD(TestGetUnassignedNeighbors)
 		{
-			NameToVarUMap.at("wa").assign("Red");
-			NameToVarUMap.at("q").assign("Blue");
+			NameToVarUMap.at("wa").assignByValue("Red");
+			NameToVarUMap.at("q").assignByValue("Blue");
 			const std::unordered_set<std::reference_wrapper<csp::Variable<std::string>>> saUnassignedNeighbors{ NameToVarUMap.at("nt"),
 				NameToVarUMap.at("nsw"),  NameToVarUMap.at("v") };
 			const std::vector<std::reference_wrapper<csp::Variable<std::string>>> saUnassignedNeighborsProbVec = graphColoringProb.getUnassignedNeighbors(NameToVarUMap.at("sa"));
@@ -274,12 +274,12 @@ namespace cspTests
 
 		TEST_METHOD(TestGetConsistentConstraints)
 		{
-			NameToVarUMap.at("sa").assign("Red");
-			NameToVarUMap.at("wa").assign("Blue");
-			NameToVarUMap.at("nt").assign("Red");
-			NameToVarUMap.at("q").assign("Red");
-			NameToVarUMap.at("nsw").assign("Red");
-			NameToVarUMap.at("v").assign("Red");
+			NameToVarUMap.at("sa").assignByValue("Red");
+			NameToVarUMap.at("wa").assignByValue("Blue");
+			NameToVarUMap.at("nt").assignByValue("Red");
+			NameToVarUMap.at("q").assignByValue("Red");
+			NameToVarUMap.at("nsw").assignByValue("Red");
+			NameToVarUMap.at("v").assignByValue("Red");
 
 			const std::vector<std::reference_wrapper<csp::Constraint<std::string>>> consistentConstraints{ constraints.at(0), constraints.at(5), constraints.at(9) };
 			Assert::IsTrue(consistentConstraints == graphColoringProb.getConsistentConstraints());
@@ -287,9 +287,9 @@ namespace cspTests
 
 		TEST_METHOD(TestGetInconsistentConstraints)
 		{
-			NameToVarUMap.at("sa").assign("Green");
-			NameToVarUMap.at("wa").assign("Green");
-			NameToVarUMap.at("nt").assign("Green");
+			NameToVarUMap.at("sa").assignByValue("Green");
+			NameToVarUMap.at("wa").assignByValue("Green");
+			NameToVarUMap.at("nt").assignByValue("Green");
 
 			const std::vector<std::reference_wrapper<csp::Constraint<std::string>>> inconsistentConstraints{ constraints.at(0), constraints.at(1), constraints.at(5) };
 			Assert::IsTrue(inconsistentConstraints == graphColoringProb.getInconsistentConstraints());
@@ -297,13 +297,13 @@ namespace cspTests
 
 		TEST_METHOD(TestGetSatisfiedConstraints)
 		{
-			NameToVarUMap.at("wa").assign("Red");
-			NameToVarUMap.at("nt").assign("Green");
-			NameToVarUMap.at("sa").assign("Blue");
-			NameToVarUMap.at("q").assign("Red");
-			NameToVarUMap.at("nsw").assign("Green");
-			NameToVarUMap.at("v").assign("Red");
-			NameToVarUMap.at("t").assign("Blue");
+			NameToVarUMap.at("wa").assignByValue("Red");
+			NameToVarUMap.at("nt").assignByValue("Green");
+			NameToVarUMap.at("sa").assignByValue("Blue");
+			NameToVarUMap.at("q").assignByValue("Red");
+			NameToVarUMap.at("nsw").assignByValue("Green");
+			NameToVarUMap.at("v").assignByValue("Red");
+			NameToVarUMap.at("t").assignByValue("Blue");
 
 			Assert::IsTrue(constraints == graphColoringProb.getSatisfiedConstraints());
 		}
@@ -314,7 +314,7 @@ namespace cspTests
 
 			for (csp::Variable<std::string>& var : graphColoringProb.getVariables())
 			{
-				var.assign("Green");
+				var.assignByValue("Green");
 			}
 
 			const std::vector<std::reference_wrapper<csp::Constraint<std::string>>> unsatisfiedConstraints{ constraints.at(0), constraints.at(1),
@@ -338,36 +338,38 @@ namespace cspTests
 
 		TEST_METHOD(TestGetConsistentDomain)
 		{
-			NameToVarUMap.at("wa").assign("Red");
+			NameToVarUMap.at("wa").assignByValue("Red");
 			const std::vector<std::string> consistentDomain1{ "Blue", "Green" };
 			Assert::IsTrue(consistentDomain1 == graphColoringProb.getConsistentDomain(NameToVarUMap.at("sa")));
 			Assert::IsTrue(consistentDomain1 == graphColoringProb.getConsistentDomain(NameToVarUMap.at("nt")));
 
 			graphColoringProb.unassignAllVariables();
-			NameToVarUMap.at("wa").assign("Red");
-			NameToVarUMap.at("nt").assign("Green");
+			NameToVarUMap.at("wa").assignByValue("Red");
+			NameToVarUMap.at("nt").assignByValue("Green");
 			const std::vector<std::string> consistentDomain2{ "Blue" };
 			const auto res = graphColoringProb.getConsistentDomain(NameToVarUMap.at("sa"));
 			Assert::IsTrue(consistentDomain2 == graphColoringProb.getConsistentDomain(NameToVarUMap.at("sa")));
 		}
 
+		// CSPDO: fix and rewrite this test
 		TEST_METHOD(TestGetCurrentAssignment)
 		{
-			NameToVarUMap.at("wa").assign("Red");
-			NameToVarUMap.at("nt").assign("Green");
-			NameToVarUMap.at("sa").assign("Blue");
-			NameToVarUMap.at("q").assign("Red");
-			NameToVarUMap.at("nsw").assign("Green");
-			NameToVarUMap.at("v").assign("Red");
-			NameToVarUMap.at("t").assign("Blue");
+			NameToVarUMap.at("wa").assignByValue("Red");
+			NameToVarUMap.at("nt").assignByValue("Green");
+			NameToVarUMap.at("sa").assignByValue("Blue");
+			NameToVarUMap.at("q").assignByValue("Red");
+			NameToVarUMap.at("nsw").assignByValue("Green");
+			NameToVarUMap.at("v").assignByValue("Red");
+			NameToVarUMap.at("t").assignByValue("Blue");
 
-			const std::unordered_map<std::reference_wrapper<csp::Variable<std::string>>, std::string> currAssignment = graphColoringProb.getCurrentAssignment();
+			const std::unordered_map<std::reference_wrapper<csp::Variable<std::string>>, size_t> currAssignment = graphColoringProb.getCurrentAssignment();
 
-			for (const std::pair<std::reference_wrapper<csp::Variable<std::string>>, std::string> varToVal : currAssignment)
+
+			for (const std::pair<std::reference_wrapper<csp::Variable<std::string>>, size_t> varToAssignmentIdx : currAssignment)
 			{
 				for (const std::pair<std::string, csp::Variable<std::string>>& nameToVar : NameToVarUMap)
 				{
-					if (varToVal.first.get() == nameToVar.second)		//	CSPDO: here is a bug, it never enters this if.
+					if (varToAssignmentIdx.first.get() == nameToVar.second)		//	CSPDO: here is a bug, it never enters this if.
 					{
 						if (nameToVar.first == "wa" || nameToVar.first == "q" || nameToVar.first == "v")
 						{

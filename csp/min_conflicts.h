@@ -49,30 +49,31 @@ namespace csp
 	}
 
 	template <typename T>
-	static T __getMinConflictedValue(ConstraintProblem<T>& constraintProblem, Variable<T>& conflictedVar)
+	static size_t __getMinConflictedAssignmentIdx(ConstraintProblem<T>& constraintProblem, Variable<T>& conflictedVar)
 	{
 		size_t minConflictsCount = std::numeric_limits<size_t>::max();
 		const std::vector<T>& conflictedVarDomain = conflictedVar.getDomain();
-		std::vector<T> minConflictingValues;
-		minConflictingValues.reserve(conflictedVarDomain.size());
-		for (T value : conflictedVarDomain)
+
+		std::vector<size_t> minConflictingAssignmentIdxs;
+		for (size_t i = 0; i < conflictedVarDomain.size(); ++i)
 		{
-			conflictedVar.assign(value);
+			conflictedVar.assignByIdx(i);
 			size_t conflictsCount = constraintProblem.getUnsatisfiedConstraintsSize();
 			if (conflictsCount < minConflictsCount)
 			{
 				minConflictsCount = conflictsCount;
-				minConflictingValues.clear();
-				minConflictingValues.emplace_back(value);
+				minConflictingAssignmentIdxs.clear();
+				minConflictingAssignmentIdxs.push_back(i);
 			}
 			else if (conflictsCount == minConflictsCount)
 			{
-				minConflictingValues.emplace_back(value);
+				minConflictingAssignmentIdxs.push_back(i);
 			}
 			conflictedVar.unassign();
+
 		}
 
-		return __selectElementRandomly<T, std::vector<T>>(minConflictingValues);
+		return __selectElementRandomly<size_t, std::vector<size_t>>(minConflictingAssignmentIdxs);
 	}
 
 	template <typename T>
@@ -109,11 +110,12 @@ namespace csp
 				assignmentHistory.emplace_back(conflictedVar, std::optional<T>{});
 			}
 			
-			T minConflictedValue = __getMinConflictedValue<T>(constraintProblem, conflictedVar);
-			conflictedVar.assign(minConflictedValue);
+			size_t minConflictedAssignmentIdx = __getMinConflictedAssignmentIdx<T>(constraintProblem, conflictedVar);
+			conflictedVar.assignByIdx(minConflictedAssignmentIdx);
 			if (writeAssignmentHistory)
 			{
-				assignmentHistory.emplace_back(conflictedVar, std::optional<T>{ minConflictedValue });
+				const std::vector<T>& domain = conflictedVar.getDomain();
+				assignmentHistory.emplace_back(conflictedVar, std::optional<T>{ domain[minConflictedAssignmentIdx] });
 			}
 
 			size_t currConflictsCount = constraintProblem.getUnsatisfiedConstraintsSize();

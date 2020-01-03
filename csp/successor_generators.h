@@ -21,14 +21,15 @@ namespace csp
 		{
 			optOldValue = randomlySelectedVar.getValue();
 		}
-		const std::vector<T>& varDomain = randomlySelectedVar.getDomain();
-		T newValue = __selectElementRandomly<T, std::vector<T>>(varDomain);
-		while (1 < varDomain.size() && optOldValue && newValue == *optOldValue)
+
+		size_t domainSize = randomlySelectedVar.getDomain().size();
+		do 
 		{
-			newValue = __selectElementRandomly<T, std::vector<T>>(varDomain);
-		}
-		randomlySelectedVar.unassign();
-		randomlySelectedVar.assign(newValue);
+			randomlySelectedVar.unassign();
+			randomlySelectedVar.assignWithRandomlySelectedValue();
+		} 
+		while (1 < domainSize && optOldValue && *optOldValue == randomlySelectedVar.getValue());
+
 		return copiedConstraintProb;
 	}
 }

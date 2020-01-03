@@ -3,6 +3,13 @@
 #include "pch.h"
 #include "constraint_problem.h"
 
+
+namespace csp
+{
+	template <typename T>
+	using VariableAssignmentIdxPair = std::pair<Ref<csp::Variable<T>>, size_t>;
+}
+
 namespace csp
 {
 	template <typename T>
@@ -33,25 +40,26 @@ namespace csp
 	}
 
 	template <typename T>
-	static std::tuple<int, Ref<Variable<T>>, T> __geBestReductionVariableValue(ConstraintProblem<T>& constraintProblem,
+	static std::tuple<int, Ref<Variable<T>>, size_t> __geBestReductionVariableAssignmentIdx(ConstraintProblem<T>& constraintProblem,
 		const std::unordered_set<Ref<Variable<T>>>& readOnlyVars,
 		std::map<Ref<Constraint<T>>, int>& constraintToWeightMap)
 	{
 		int weight = __CalculateWeight<T>(constraintProblem, constraintToWeightMap);
 		const Assignment<T> originalAssignment = constraintProblem.getCurrentAssignment();
 		constraintProblem.unassignAllVariables();
-		std::map<int, VariableValuePair<T>> weightToPairMap;
+		std::map<int, VariableAssignmentIdxPair<T>> weightToPairMap;
 		for (Variable<T>& var : constraintProblem.getVariables())
 		{
 			if (readOnlyVars.count(var))
 			{
 				continue;
 			}
-			for (T value : var.getDomain())
+			const std::vector<T>& domain = var.getDomain();
+			for (size_t i = 0; i < domain.size(); ++i)
 			{
-				var.assign(value);
+				var.assignByIdx(i);
 				int currWeight = __CalculateWeight<T>(constraintProblem, constraintToWeightMap);
-				weightToPairMap.emplace(weight - currWeight, VariableValuePair<T>{var, value});
+				weightToPairMap.emplace(weight - currWeight, VariableAssignmentIdxPair<T>{var, i});
 				var.unassign();
 			}
 		}
@@ -61,8 +69,8 @@ namespace csp
 		const auto& maxReduction = weightToPairMap.rbegin();
 		int weightReduction = maxReduction->first;
 		Variable<T>& var = maxReduction->second.first;
-		T value = maxReduction->second.second;
-		return { weightReduction, var, value };
+		size_t assignmentIdx = maxReduction->second.second;
+		return { weightReduction, var, assignmentIdx };
 	}
 
 	template <typename T>
@@ -92,17 +100,18 @@ namespace csp
 					return assignmentHistory;
 				}
 
-				auto [reduction, varRef, value] = __geBestReductionVariableValue<T>(constraintProblem, readOnlyVars, constraintToWeightMap);
+				auto [reduction, varRef, assignmentIdx] = __geBestReductionVariableAssignmentIdx<T>(constraintProblem, readOnlyVars, constraintToWeightMap);
 				Variable<T>& var = varRef.get();
 				var.unassign();
 				if (writeAssignmentHistory)
 				{
 					assignmentHistory.emplace_back(var, std::optional<T>{});
 				}
-				var.assign(value);
+				var.assignByIdx(assignmentIdx);
 				if (writeAssignmentHistory)
 				{
-					assignmentHistory.emplace_back(var, std::optional<T>{value});
+					const std::vector<T>& domain = var.getDomain();
+					assignmentHistory.emplace_back(var, std::optional<T>{ domain[assignmentIdx] });
 				}
 
 				lastReduction = reduction;

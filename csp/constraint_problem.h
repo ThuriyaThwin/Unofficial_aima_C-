@@ -11,6 +11,9 @@ namespace csp
 
 	template<typename T>
 	using AssignmentHistory = std::deque<std::pair<Ref<Variable<T>>, std::optional<T>>>;
+
+	template <typename T>
+	using VariableValuePair = std::pair<Ref<csp::Variable<T>>, T>;
 }
 
 namespace csp
@@ -449,13 +452,11 @@ namespace csp
 
 		const Assignment<T> getCurrentAssignment() const noexcept
 		{
-			//std::unordered_map<Ref<Variable<T>>, T> currAssignment;
 			std::unordered_map<Ref<Variable<T>>, size_t> currAssignment;
 			for (Variable<T>& var : m_vecVariables)
 			{
 				if (var.isAssigned())
 				{
-					//currAssignment.emplace(var, var.getValue());
 					currAssignment.emplace(var, var.getAssignmentIdx());
 				}
 			}
@@ -478,20 +479,6 @@ namespace csp
 					variable.assignByIdx(assignmentIdx);
 				}
 			}
-
-			/*for (const std::pair<Ref<Variable<T>>, T>& varToVal : assignment)
-			{
-				Variable<T>& variable = varToVal.first.get();
-				if (!variable.isAssigned())
-				{
-					variable.assignByValue(varToVal.second);
-				}
-				else if (variable.getValue() != varToVal.second)
-				{
-					variable.unassign();
-					variable.assignByValue(varToVal.second);
-				}
-			}*/
 		}
 
 		// CSPDO: write test
@@ -589,7 +576,7 @@ namespace csp
 		{
 			hash<T> hasher;
 			size_t hashValue = 0;
-			for (T elem : uset)
+			for (csp::PassType<T> elem : uset)
 			{
 				hashValue += hasher(elem);
 			}

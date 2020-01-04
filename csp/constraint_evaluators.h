@@ -36,13 +36,13 @@ namespace csp
 	{
 		std::unordered_set<T> seenValues;
 		seenValues.reserve(assignedValues.size());
-		for (T value : assignedValues)
+		for (size_t i = 0; i < assignedValues.size(); ++i)
 		{
-			if (seenValues.count(value))
+			if (seenValues.count(assignedValues[i]))
 			{
 				return false;
 			}
-			seenValues.emplace(value);
+			seenValues.emplace(assignedValues[i]);
 		}
 		return true;
 	}

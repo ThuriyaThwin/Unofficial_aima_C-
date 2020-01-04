@@ -20,7 +20,6 @@ namespace csp
 			Assignment<T> child;
 			for (Variable<T>& var : this->m_ConstraintProb.getVariables())
 			{
-				// CSPDO: for some reason it sometimes throws an exception, try to reproduce
 				if (zeroToOneDistribution(defaultRandomEngine) < 0.5)
 				{
 					child.emplace(var, firstParent.at(std::ref(var)));

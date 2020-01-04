@@ -1,7 +1,7 @@
 #pragma once
 
 #include "pch.h"
-#include "constraint_problem.h"
+#include "tree_csp_solver.h"
 
 
 /*
@@ -34,11 +34,144 @@ namespace csp
 	using ConstraintGraph = std::unordered_map<Ref<Variable<T>>, std::vector<Ref<Variable<T>>>>;
 
 	template <typename T>
+	static bool __isCyclicGraph(const ConstraintGraph<T>& reducedGraph,
+		std::unordered_set<Ref<Variable<T>>>& visitedNodes,
+		const Variable<T>& node, std::optional<Variable<T>> parent)
+	{
+		visitedNodes.emplace(node);
+		for (const Variable<T>& neighbor : reducedGraph[node])
+		{
+			if (!visitedNodes.count(neighbor))
+			{
+				if (__isCyclicGraph<T>(reducedGraph, neighbor, node))
+				{
+					return true;
+				}
+			}
+			else if (neighbor != parent)
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+
+	template <typename T>
+	static bool __isTree(ConstraintGraph<T>& reducedGraph)
+	{
+		/* By definition a tree is an acyclic connected graph */
+		if (reducedGraph.empty())
+		{
+			return false;
+		}
+
+		std::unordered_set<Ref<Variable<T>>> visitedNodes;
+		std::vector<Ref<Variable<T>>> keys;
+		for (const auto& elem : reducedGraph)
+		{
+			keys.emplace_back(elem.first);
+		}
+		Variable<T>& randomlySelectedRoot = __selectElementRandomly<Ref<Variable<T>>, std::vector<Ref<Variable<T>>>>(keys);
+		if (__isCyclicGraph<T>(reducedGraph, visitedNodes, randomlySelectedRoot, std::optional<Variable<T>>{ }))
+		{
+			return false;
+		}
+
+		std::unordered_set<Ref<Variable<T>>> reducedGraphVars;
+		for (auto& varToNeighbors : reducedGraph)
+		{
+			reducedGraphVars.emplace(varToNeighbors.first);
+			const std::vector<Ref<Variable<T>>>& neighbors = varToNeighbors.second;
+			reducedGraph.insert(neighbors.cbegin(), neighbors.cend());
+		}
+
+		bool isConnected = visitedNodes.size() == reducedGraphVars.size();
+		return isConnected;
+	}
+
+	// taken from: https://gist.github.com/thirdwing/953b146ba39c5f5ff562
+	// another alternative: https://gist.github.com/Alexhuszagh/67efb078a82616ed07529ed97586646a
+	template <typename T>
+	static std::vector<std::vector<T>> __cartesian_product(const std::vector<std::vector<T>>& v) {
+		std::vector<std::vector<T>> s = { {} };
+		for (auto& u : v) {
+			std::vector<std::vector<T>> r;
+			for (auto& x : s) {
+				for (auto y : u) {
+					r.push_back(x);
+					r.back().push_back(y);
+				}
+			}
+			s.swap(r);
+		}
+		return s;
+	}
+
+	template <typename T>
+	static std::vector<std::vector<T>> __getConsistentAssignmentsValues(
+		const std::unordered_set<Ref<Variable<T>>>& cutSetVars,
+		const std::vector<Ref<Constraint<T>>>& cutSetConstraints,
+		const std::unordered_set<Ref<Variable<T>>>& readOnlyVariables)
+	{
+		std::vector<std::vector<T>> domains;
+		domains.reserve(cutSetVars.size());
+		for (const Variable<T> var : cutSetVars)
+		{
+			domains.emplace_back(var.getDomain());
+		}
+		std::vector<std::vector<T>> domainsProduct = __cartesian_product<T>(domains);
+		std::vector<std::vector<T>> consistentAssignmentValues;
+		for (const std::vector<T>& assignmentValues : domainsProduct)
+		{
+			std::vector<std::pair<Ref<Variable<T>>, T>> vecVarToValue;
+			std::transform(std::execution::par_unseq, cutSetVars.cbegin(), cutSetVars.cend(), assignmentValues.cbegin(), 
+				std::back_inserter(vecVarToValue), [](const Ref<Variable<T>>& var, PassType<T> value) -> std::pair<Ref<Variable<T>>, T>
+				{
+					return std::make_pair(var, value);
+				} );
+
+			for (const std::pair<Ref<Variable<T>>, T>& varToValue : vecVarToValue)
+			{
+				if (!readOnlyVariables.count(varToValue.first))
+				{
+					varToValue.first.get().assignByValue(varToValue.second);
+				}
+			}
+
+			bool allCutSetConstraintsAreSatisfied = true;
+			for (const Constraint<T>& constr : cutSetConstraints)
+			{
+				if (!constr.isSatisfied())
+				{
+					allCutSetConstraintsAreSatisfied = false;
+					break;
+				}
+			}
+
+			if (allCutSetConstraintsAreSatisfied)
+			{
+				consistentAssignmentValues.emplace_back(assignmentValues);
+			}
+
+			for (Variable<T>& var : cutSetVars)
+			{
+				if (!readOnlyVariables.count(var))
+				{
+					var.unassign();
+				}
+			}
+		}
+
+		return consistentAssignmentValues;
+	}
+
+	template <typename T>
 	const AssignmentHistory<T> naiveCycleCutset(ConstraintProblem<T>& constraintProblem, bool writeAssignmentHistory = false)
 	{
 		AssignmentHistory<T> assignmentHistory;
 		const std::vector<Ref<Variable<T>>> variables = constraintProblem.getUnassignedVariables();
-		const std::vector<Ref<Variable<T>>> readOnlyVariables = constraintProblem.getAssignedVariables();
+		const std::vector<Ref<Variable<T>>> vecReadOnlyVariables = constraintProblem.getAssignedVariables();
+		const std::unordered_set<Ref<Variable<T>>> readOnlyVariables{ vecReadOnlyVariables.cbegin(), vecReadOnlyVariables.cend() };
 		std::vector<Ref<Constraint<T>>>& constraints = 
 			const_cast<std::vector<Ref<Constraint<T>>>&>(constraintProblem.getConstraints());
 		std::sort(std::execution::par_unseq, constraints.begin(), constraints.end(),
@@ -82,6 +215,84 @@ namespace csp
 
 			if (__isTree<T>(reducedGraph))
 			{
+				std::vector<std::vector<T>> cosistentAssignmentsValyes = __getConsistentAssignmentsValues<T>(cutSetVars, 
+					cutSetConstraints, readOnlyVariables);
+				std::vector<Ref<Variable<T>>> nonCutsetVars;
+				nonCutsetVars.reserve(variables.size());
+				for (Variable<T>& var : variables)
+				{
+					if (!cutSetVars.count(var))
+					{
+						nonCutsetVars.emplace_back(var);
+					}
+				}
+
+				std::unordered_map<Ref<Variable<T>>, std::vector<T>> nonCutSetVarsToOriginalDomains;
+				for (Variable<T>& var : nonCutsetVars)
+				{
+					nonCutSetVarsToOriginalDomains.emplace(var, var.getDomain());
+				}
+
+				for (const std::vector<T>& consistentAssignmentValues : cosistentAssignmentsValyes)
+				{
+					std::vector<std::pair<Ref<Variable<T>>, T>> vecVarToValue;
+					std::transform(cutSetVars.cbegin(), cutSetVars.cend(), consistentAssignmentValues.cbegin(),
+						std::back_inserter(vecVarToValue), [](Variable<T>& var, PassType<T> value) -> std::pair<Ref<Variable<T>>, PassType<T>>
+						{
+							return std::pair<Ref<Variable<T>>, T>{ var, value};
+						});
+
+					for (const std::pair<Ref<Variable<T>>, T>& varToValue : vecVarToValue)
+					{
+						if (!readOnlyVariables.count(varToValue.first))
+						{
+							varToValue.first.get().assignByValue(varToValue.second);
+							if (writeAssignmentHistory)
+							{
+								// CSPDO: fix it
+								//assignmentHistory.emplace_back(varToValue.first, varToValue.first.get().getAssignmentIdx());
+							}	
+						}
+					}
+					for (Variable<T>& nonCutSetVariable : nonCutsetVars)
+					{
+						if (!readOnlyVariables.count(nonCutSetVariable))
+						{
+							nonCutSetVariable.setSubsetDomain(constraintProblem.getConsistentDomain(nonCutSetVariable));
+						}
+					}
+
+					AssignmentHistory<T> treeCSPAssignmentHistory = treeCspSolver(constraintProblem, writeAssignmentHistory);
+					if (writeAssignmentHistory)
+					{
+						// CSPDO: fix it
+						//assignmentHistory.insert(treeCSPAssignmentHistory.cbegin(), treeCSPAssignmentHistory.cend());
+					}
+					if (constraintProblem.isCompletelyConsistentlyAssigned())
+					{
+						return assignmentHistory;
+					}
+
+					for (Variable<T>& var : variables)
+					{
+						if (!readOnlyVariables.count(var))
+						{
+							var.unassign();
+						}
+						if (writeAssignmentHistory)
+						{
+							assignmentHistory.emplace_back(var, std::optional<T>{ });
+						}
+					}
+
+					for (std::pair<Ref<Variable<T>>, std::vector<T>> varToOriginalDomain : nonCutSetVarsToOriginalDomains)
+					{
+						if (!readOnlyVariables.count(varToOriginalDomain.first))
+						{
+							varToOriginalDomain.first.get().setDomain(varToOriginalDomain.second);
+						}
+					}
+				}
 
 			}
 
@@ -89,78 +300,5 @@ namespace csp
 
 
 		return assignmentHistory;
-	}
-}
-
-
-namespace csp
-{
-	template <typename T>
-	static bool __isTree(const ConstraintGraph<T>& reducedGraph)
-	{
-		/* By definition a tree is an acyclic connected graph */
-		if (reducedGraph.empty())
-		{
-			return false;
-		}
-
-		std::unordered_set<Ref<Variable<T>>> visitedNodes;
-		// CSPDO: select root node randomly, call __isCyclic
-		
-
-		std::unordered_set<Ref<Variable<T>>> reducedGraphVars;
-		for (const auto& varToNeighbors : reducedGraph)
-		{
-			reducedGraphVars.emplace(varToNeighbors.first);
-			std::unordered_set<Ref<Variable<T>>>& neighbors = varToNeighbors.second;
-			reducedGraph.insert(neighbors.cbegin(), neighbors.cend())
-		}
-
-		bool isConnected = visitedNodes.size() == reducedGraphVars.size();
-		return isConnected;
-	}
-
-	template <typename T>
-	static bool __isCyclicGraph(const ConstraintGraph<T>& reducedGraph, 
-		std::unordered_set<Ref<Variable<T>>>& visitedNodes,
-		const Variable<T>& node, std::optional<Ref<Variable<T>>> parent)
-	{
-		visitedNodes.emplace(node);
-		for (const Variable<T>& neighbor : reducedGraph[node])
-		{
-			if (!visitedNodes.count(neighbor))
-			{
-				if (__isCyclicGraph<T>(reducedGraph, neighbor, node))
-				{
-					return true;
-				}
-			}
-			else if (neighbor != parent)
-			{
-				return true;
-			}
-		}
-		return false;
-	}
-}
-
-
-namespace csp
-{
-	template <typename T>
-	static std::vector<Assignment<T>> __getConsistentAssignments(
-		const std::unordered_set<Ref<Variable<T>>>& cutSetVars,
-		const std::vector<Ref<Constraint<T>>>& cutSetConstraints,
-		const std::vector<Ref<Variable<T>>>& readOnlyVariables)
-	{
-		std::vector<std::vector<T>> domains;
-		domains.reserve(cutSetVars.size());
-		for (const Variable<T> var : cutSetVars)
-		{
-			domains.emplace_back(var.getDomain());
-		}
-		
-		std::vector<Assignment<T>> consistentAssignments;
- 
 	}
 }

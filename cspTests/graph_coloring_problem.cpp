@@ -103,8 +103,8 @@ namespace cspTests
 		TEST_METHOD(TestGeneralGeneticConstraintProblem)
 		{
 			csp::GeneralGeneticConstraintProblem<std::string> graphColoringGeneticProb{ graphColoringProb, 0.1 };
-			csp::geneticLocalSearch(graphColoringGeneticProb, 100, 10, 0.1);
-			csp::ConstraintProblem<std::string> graphColorProbFromGeneticProb = graphColoringGeneticProb.getConstraintProblem();
+			csp::geneticLocalSearch(graphColoringGeneticProb, 1000, 1000, 0.1);
+			csp::ConstraintProblem<std::string>& graphColorProbFromGeneticProb = graphColoringGeneticProb.getConstraintProblem();
 			Assert::IsTrue(graphColorProbFromGeneticProb.isCompletelyConsistentlyAssigned());
 		}
 
@@ -114,5 +114,12 @@ namespace cspTests
 			const csp::AssignmentHistory<std::string> assignmentHistory = csp::treeCspSolver(easyGraphColoringProb);
 			Assert::IsTrue(easyGraphColoringProb.isCompletelyConsistentlyAssigned());
 		}
+
+		/*TEST_METHOD(TestNaiveCycleCutset)
+		{
+			easyGraphColoringProb.unassignAllVariables();
+			const csp::AssignmentHistory<std::string> assignmentHistory = csp::naiveCycleCutset(easyGraphColoringProb);
+			Assert::IsTrue(easyGraphColoringProb.isCompletelyConsistentlyAssigned());
+		}*/
 	};
 }

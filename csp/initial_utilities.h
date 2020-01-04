@@ -3,9 +3,9 @@
 #include "pch.h"
 
 // CSPDOs in general:
-// use std::is_fundamental and std::conditional to ascertain whether to pass T around by value or by const reference
 // allow users to determine it they want the whole assignment history or simply the number of assignments and un-assignments.
 // rewrite various solvers so that they'll output their assignment history.
+// when we know in advance the allowed set of template types "T", using the explicit instantiation model is better
 
 
 // CSPDOs for c++20:
@@ -20,7 +20,12 @@ namespace csp
 	template <typename U>
 	using Ref = std::reference_wrapper<U>;
 
-	static constexpr size_t UNASSIGNED = std::numeric_limits<size_t>::max();
+	constexpr size_t UNASSIGNED = std::numeric_limits<size_t>::max();
+
+	constexpr size_t SIZE_LIMIT = 40;	// in bytes
+
+	template <typename T>
+	using PassType = typename std::conditional_t<sizeof(T) <= SIZE_LIMIT, T, const T&>;
 }
 
 namespace csp

@@ -25,13 +25,13 @@ namespace csp
 	class Variable final
 	{
 	private:
-		static std::optional<std::function<constexpr bool(T left, T right)>> init_compare()
+		static std::optional<std::function<constexpr bool(PassType<T> left, PassType<T> right)>> init_compare()
 		{
 			// CSPDO: test it
 			static_assert(__is_to_stream_writable<std::ostream, T>::value, "T must be writable to std::cout.");
 
 			// CSPDO: test it
-			std::optional<std::function<bool(T left, T right)>> optCompare;
+			std::optional<std::function<bool(PassType<T> left, PassType<T> right)>> optCompare;
 			if constexpr (std::is_same<__T_less_than_operator_return_type<T>, bool>::value)
 			{
 				optCompare = std::less<T>();
@@ -52,7 +52,7 @@ namespace csp
 			return vecDomain;
 		}
 
-		size_t get_assignment_idx_for_value_in_sorted_domain(T value) const
+		size_t get_assignment_idx_for_value_in_sorted_domain(PassType<T> value) const
 		{
 			const auto itToBeginDomain = m_vecDomain.cbegin();
 			const auto itToValPosition = std::lower_bound(itToBeginDomain, m_vecDomain.cend(), value);
@@ -66,7 +66,7 @@ namespace csp
 			}
 		}
 
-		size_t get_assignment_idx_for_value_in_unsorted_domain(T value) const
+		size_t get_assignment_idx_for_value_in_unsorted_domain(PassType<T> value) const
 		{
 			size_t idx = 0;
 			bool isValFound = false;
@@ -112,7 +112,7 @@ namespace csp
 			return wasDomainShortened;
 		}
 
-		std::optional<std::function<constexpr bool(T left, T right)>> m_optCompare;
+		std::optional<std::function<constexpr bool(PassType<T> left, PassType<T> right)>> m_optCompare;
 		std::vector<T> m_vecDomain;
 		size_t m_size_tValueIdx;
 		
@@ -183,9 +183,7 @@ namespace csp
 			m_size_tValueIdx = assignmentIdx;
 		}
 
-		// CSPDO: perhaps using rvalue reference and std::forward<T>(val) is better, 
-		// but then would have to call assign like this: var.assign(std::move(value)) whenever calling the assign method
-		void assignByValue(T val)
+		void assignByValue(PassType<T> val)
 		{
 			if (this->isAssigned())
 			{
@@ -202,7 +200,7 @@ namespace csp
 			}
 		}
 
-		constexpr size_t getAssignmentIdxOfValue(T value) const
+		constexpr size_t getAssignmentIdxOfValue(PassType<T> value) const
 		{
 			if (m_optCompare)
 			{
@@ -231,15 +229,10 @@ namespace csp
 		{
 			return m_vecDomain;
 		}
-
-		void removeFromDomainByIdx(size_t idx)
+		
+		void setDomain(const std::vector<T>& domain)
 		{
-			if (this->isAssigned())
-			{
-				throw domain_alteration_error<T>(*this);
-			}
-			m_vecDomain.erase(m_vecDomain.begin() + idx);
-			m_size_tValueIdx = UNASSIGNED;
+			m_vecDomain = domain;
 		}
 
 		bool setSubsetDomain(const std::vector<T>& vecSubsetDomain, bool subsetDomainIsSorted = true)
@@ -258,7 +251,7 @@ namespace csp
 					std::sort(std::execution::par_unseq, noConstSubsetDomain.begin(), noConstSubsetDomain.end());
 				}
 
-				if (std::includes(std::execution::par_unseq, 
+				if (std::includes(std::execution::par_unseq,
 					m_vecDomain.cbegin(), m_vecDomain.cend(), vecSubsetDomain.cbegin(), vecSubsetDomain.cend()))
 				{
 					m_vecDomain = vecSubsetDomain;
@@ -274,8 +267,18 @@ namespace csp
 			{
 				m_size_tValueIdx = UNASSIGNED;
 			}
-			
+
 			return wasDomainShortened;
+		}
+
+		void removeFromDomainByIdx(size_t idx)
+		{
+			if (this->isAssigned())
+			{
+				throw domain_alteration_error<T>(*this);
+			}
+			m_vecDomain.erase(m_vecDomain.begin() + idx);
+			m_size_tValueIdx = UNASSIGNED;
 		}
 
 		friend std::ostream& operator<<(std::ostream& os, const Variable<T>& variable) noexcept
@@ -402,7 +405,7 @@ namespace csp
 		}
 
 	public:
-		uncontained_value_error(const Variable<T>& var, T value) : 
+		uncontained_value_error(const Variable<T>& var, PassType<T> value) :
 			std::domain_error{ "Cannot assign variable: " + var.toString()
 			+ " with value: " + getValueStr(value) + " since it is not contained in variable's domain." }
 		{ }

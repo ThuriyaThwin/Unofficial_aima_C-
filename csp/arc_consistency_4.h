@@ -8,9 +8,6 @@ namespace csp
 {
 	template <typename T>
 	using VariableValueNeighborTriplet = std::tuple<Ref<csp::Variable<T>>, T, Ref<csp::Variable<T>>>;
-
-	template <typename T>
-	using VariableValuePair = std::pair<Ref<csp::Variable<T>>, T>;
 }
 
 

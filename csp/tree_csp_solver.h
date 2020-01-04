@@ -11,9 +11,9 @@ namespace csp
 	{
 		using DirectedGraph = std::unordered_map<Ref<Variable<T>>, std::unordered_set<Ref<Variable<T>>>>;
 		DirectedGraph directedGraph;
-		const std::vector<Ref<Variable<T>>> variables = constraintProblem.getUnassignedVariables();
+		const std::vector<Ref<Variable<T>>> unassignedVariables = constraintProblem.getUnassignedVariables();
 
-		for (Variable<T>& var : variables)
+		for (Variable<T>& var : unassignedVariables)
 		{
 			for (Variable<T>& neighbor : constraintProblem.getUnassignedNeighbors(var))
 			{
@@ -26,15 +26,19 @@ namespace csp
 			}
 		}
 
-		std::unordered_map<Ref<Variable<T>>, unsigned int> inDegree;
-		for (Variable<T>& var : variables)
+		std::unordered_map<Ref<Variable<T>>, size_t> inDegree;
+		for (Variable<T>& var : unassignedVariables)
 		{
-			inDegree.emplace(var, directedGraph[var].size());
+			for (Variable<T>& neighbor : directedGraph[var])
+			{
+				inDegree.try_emplace(var, 0);
+				++inDegree[neighbor];
+			}
 		}
 
 		std::unordered_set<Ref<Variable<T>>> zeroInDegreeVars;
 		zeroInDegreeVars.reserve(inDegree.size() >> 2);
-		for (const std::pair<Ref<Variable<T>>, unsigned int>& varToInDegree : inDegree)
+		for (const std::pair<Ref<Variable<T>>, size_t>& varToInDegree : inDegree)
 		{
 			if (!varToInDegree.second)
 			{
@@ -43,14 +47,13 @@ namespace csp
 		}
 
 		std::vector<Ref<Variable<T>>> topologicalySortedUnassginedVars;
-		topologicalySortedUnassginedVars.reserve(variables.size());
+		topologicalySortedUnassginedVars.reserve(unassignedVariables.size());
 		while (!zeroInDegreeVars.empty())
 		{
-			const auto& zeroInDegreeVarsItToBegin = zeroInDegreeVars.cbegin();
+			const auto zeroInDegreeVarsItToBegin = zeroInDegreeVars.cbegin();
 			Variable<T>& var = *zeroInDegreeVarsItToBegin;
 			zeroInDegreeVars.erase(zeroInDegreeVarsItToBegin);
 			topologicalySortedUnassginedVars.emplace_back(var);
-			const auto& bar = directedGraph[var];
 			for (Variable<T>& neighbor : directedGraph[var])
 			{
 				--inDegree[neighbor];
@@ -62,7 +65,7 @@ namespace csp
 		}
 
 
-		if (topologicalySortedUnassginedVars.size() != variables.size())
+		if (topologicalySortedUnassginedVars.size() != unassignedVariables.size())
 		{
 			return std::vector<Ref<Variable<T>>>{};
 		}

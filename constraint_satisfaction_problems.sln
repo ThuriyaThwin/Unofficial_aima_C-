@@ -9,6 +9,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "cspTests", "cspTests\cspTes
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "cspMain", "cspMain\cspMain.vcxproj", "{A67984AB-7EBF-459C-90ED-EBDB1A2BC33A}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "cspExamples", "cspExamples\cspExamples.vcxproj", "{E34C87E6-BCE5-45E7-ACB4-B0FF65B82F83}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -41,6 +43,14 @@ Global
 		{A67984AB-7EBF-459C-90ED-EBDB1A2BC33A}.Release|x64.Build.0 = Release|x64
 		{A67984AB-7EBF-459C-90ED-EBDB1A2BC33A}.Release|x86.ActiveCfg = Release|Win32
 		{A67984AB-7EBF-459C-90ED-EBDB1A2BC33A}.Release|x86.Build.0 = Release|Win32
+		{E34C87E6-BCE5-45E7-ACB4-B0FF65B82F83}.Debug|x64.ActiveCfg = Debug|x64
+		{E34C87E6-BCE5-45E7-ACB4-B0FF65B82F83}.Debug|x64.Build.0 = Debug|x64
+		{E34C87E6-BCE5-45E7-ACB4-B0FF65B82F83}.Debug|x86.ActiveCfg = Debug|Win32
+		{E34C87E6-BCE5-45E7-ACB4-B0FF65B82F83}.Debug|x86.Build.0 = Debug|Win32
+		{E34C87E6-BCE5-45E7-ACB4-B0FF65B82F83}.Release|x64.ActiveCfg = Release|x64
+		{E34C87E6-BCE5-45E7-ACB4-B0FF65B82F83}.Release|x64.Build.0 = Release|x64
+		{E34C87E6-BCE5-45E7-ACB4-B0FF65B82F83}.Release|x86.ActiveCfg = Release|Win32
+		{E34C87E6-BCE5-45E7-ACB4-B0FF65B82F83}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -38,6 +38,13 @@ namespace cspTests
 		csp::Constraint<std::string> constr15{ { NameToVarUMap.at("nsw"), NameToVarUMap.at("v") }, csp::allDiff<std::string> };
 		csp::ConstraintProblem<std::string> easyGraphColoringProb{ {constr11, constr12, constr13, constr14, constr15} };
 
+		csp::Constraint<std::string> constr21{ { NameToVarUMap.at("sa"), NameToVarUMap.at("wa") }, csp::allDiff<std::string> };
+		csp::Constraint<std::string> constr22{ { NameToVarUMap.at("sa"), NameToVarUMap.at("q") }, csp::allDiff<std::string> };
+		csp::Constraint<std::string> constr23{ { NameToVarUMap.at("wa"), NameToVarUMap.at("nt") }, csp::allDiff<std::string> };
+		csp::Constraint<std::string> constr24{ { NameToVarUMap.at("nt"), NameToVarUMap.at("q") }, csp::allDiff<std::string> };
+		csp::Constraint<std::string> constr25{ { NameToVarUMap.at("q"), NameToVarUMap.at("v") }, csp::allDiff<std::string> };
+		csp::ConstraintProblem<std::string> easierGraphColoringProb{ {constr21, constr22, constr23, constr24, constr25} };
+
 		TEST_METHOD_INITIALIZE(GraphColoringTestsSetUp)
 		{
 			graphColoringProb.unassignAllVariables();
@@ -115,11 +122,11 @@ namespace cspTests
 			Assert::IsTrue(easyGraphColoringProb.isCompletelyConsistentlyAssigned());
 		}
 
-		/*TEST_METHOD(TestNaiveCycleCutset)
+		TEST_METHOD(TestNaiveCycleCutset)
 		{
 			easyGraphColoringProb.unassignAllVariables();
-			const csp::AssignmentHistory<std::string> assignmentHistory = csp::naiveCycleCutset(easyGraphColoringProb);
-			Assert::IsTrue(easyGraphColoringProb.isCompletelyConsistentlyAssigned());
-		}*/
+			const csp::AssignmentHistory<std::string> assignmentHistory = csp::naiveCycleCutset(easierGraphColoringProb);
+			Assert::IsTrue(easierGraphColoringProb.isCompletelyConsistentlyAssigned());
+		}
 	};
 }

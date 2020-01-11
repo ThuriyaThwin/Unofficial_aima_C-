@@ -98,7 +98,7 @@ namespace csp
 			}
 
 			std::unordered_set<T> usetDomain{ m_vecDomain.cbegin(), m_vecDomain.cend() };
-			for (T value : vecSubsetDomain)
+			for (PassType<T> value : vecSubsetDomain)
 			{
 				if (!usetDomain.count(value))
 				{
@@ -314,6 +314,18 @@ namespace csp
 			return outStringStream.str();
 		}
 
+		void writeAssignmentToOutStream(std::ostream& outStream) const noexcept
+		{
+			if (m_size_tValueIdx != UNASSIGNED)
+			{
+				outStream << m_vecDomain[m_size_tValueIdx];
+			}
+			else
+			{
+				outStream << "unassigned";
+			}
+		}
+
 		friend bool operator==(const Variable<T>& left, const Variable<T>& right) noexcept
 		{
 			return &(left) == &(right);
@@ -324,22 +336,54 @@ namespace csp
 			return !(left == right);
 		}
 
-		static void constructFromNamesToEqualDomain(std::unordered_map<std::string, Variable<T>>& NameToVarUMap,
-			const std::unordered_set<std::string>& names, const std::unordered_set<T>& domain) noexcept
-		{
-			NameToVarUMap.reserve(names.size());
-			for (const std::string& varName : names)
-			{
-				NameToVarUMap.emplace(varName, domain);
-			}
-		}
-
 		static std::unordered_map<std::string, Variable<T>> constructFromNamesToEqualDomain(const std::unordered_set<std::string>& names,
 			const std::unordered_set<T>& domain) noexcept
 		{
-			std::unordered_map<std::string, Variable<T>> NameToVarUMap;
-			Variable<T>::constructFromNamesToEqualDomain(NameToVarUMap, names, domain);
-			return NameToVarUMap;
+			std::unordered_map<std::string, Variable<T>> nameToVarMap;
+			nameToVarMap.reserve(names.size());
+			for (const std::string& varName : names)
+			{
+				nameToVarMap.emplace(varName, domain);
+			}
+			return nameToVarMap;
+		}
+
+		static std::unordered_map<std::string, Ref<Variable<T>>> constructFromNamesToEqualDomainPutInVec(const std::unordered_set<std::string>& names,
+			const std::unordered_set<T>& domain, std::vector<Variable<T>>& variables)
+		{
+			variables.reserve(names.size());
+			for (size_t i = 0; i < names.size(); ++i)
+			{
+				variables.emplace_back(domain);
+			}
+
+			std::unordered_map<std::string, Ref<Variable<T>>> nameToVarRefMap;
+			nameToVarRefMap.reserve(names.size());
+			size_t i = 0;
+			for (const std::string& varName : names)
+			{
+				nameToVarRefMap.emplace(varName, variables[i]);
+				++i;
+			}
+			
+			return nameToVarRefMap;
+		}
+
+		static std::unordered_map<std::string, Ref<Variable<T>>> constructFromNamesToDomainsPutInVec(
+			std::unordered_map<std::string, std::unordered_set<T>> NameToDomainMap, std::vector<Variable<T>>& variables)
+		{
+			variables.reserve(NameToDomainMap.size());
+			
+			std::unordered_map<std::string, Ref<Variable<T>>> nameToVarRefMap;
+			nameToVarRefMap.reserve(NameToDomainMap.size());
+
+			for (const std::pair<std::string, std::unordered_set<T>>& nameToDomain : NameToDomainMap)
+			{
+				variables.emplace_back(nameToDomain.second);
+				nameToVarRefMap.emplace(nameToDomain.first, variables.back());
+			}
+
+			return nameToVarRefMap;
 		}
 	};
 

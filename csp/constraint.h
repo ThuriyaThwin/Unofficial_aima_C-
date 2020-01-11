@@ -6,6 +6,12 @@
 
 namespace csp
 {
+	template <typename T>
+	using ConstraintEvaluator = std::function<bool(const std::vector<T>& assignedValues)>;
+}
+
+namespace csp
+{
 	template<typename T> class duplicate_variable_error;
 	template<typename T> class uncontained_variable_error;
 
@@ -35,7 +41,7 @@ namespace csp
 			if (!var.isAssigned())
 			{
 				const std::vector<T> vecConsistentDomain = this->getConsistentDomainValues(var);
-				var.setSubsetDomain(vecConsistentDomain);
+				var.setDomain(vecConsistentDomain);
 			}
 		}
 
@@ -49,12 +55,11 @@ namespace csp
 
 		std::unordered_set<Variable<T>*> m_usetVariableAddresses;
 		std::vector<Ref<Variable<T>>> m_vecVariables;
-		using ConstraintEvaluator = std::function<bool(const std::vector<T>& assignedValues)>;
-		ConstraintEvaluator m_ceEvaluateConstraint;
+		ConstraintEvaluator<T> m_ceEvaluateConstraint;
 
 	public:
 		Constraint() = delete;
-		Constraint(const std::vector<Ref<Variable<T>>>& variables, const ConstraintEvaluator& evaluateConstraint) :
+		Constraint(const std::vector<Ref<Variable<T>>>& variables, const ConstraintEvaluator<T>& evaluateConstraint) :
 			m_usetVariableAddresses{ init_varsAddresses(variables) },
 			m_vecVariables{ variables }, 
 			m_ceEvaluateConstraint{ evaluateConstraint }
@@ -93,7 +98,7 @@ namespace csp
 		~Constraint() = default;
 
 		const std::vector<Ref<Variable<T>>>& getVariables() const noexcept { return m_vecVariables; }
-		const ConstraintEvaluator& getConstraintEvaluator() const noexcept { return m_ceEvaluateConstraint; }
+		const ConstraintEvaluator<T>& getConstraintEvaluator() const noexcept { return m_ceEvaluateConstraint; }
 
 		constexpr bool isCompletelyAssigned() const noexcept
 		{

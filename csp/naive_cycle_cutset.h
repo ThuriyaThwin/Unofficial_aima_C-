@@ -34,16 +34,16 @@ namespace csp
 	using ConstraintGraph = std::unordered_map<Ref<Variable<T>>, std::vector<Ref<Variable<T>>>>;
 
 	template <typename T>
-	static bool __isCyclicGraph(const ConstraintGraph<T>& reducedGraph,
+	static bool __isCyclicGraph(ConstraintGraph<T>& reducedGraph,
 		std::unordered_set<Ref<Variable<T>>>& visitedNodes,
-		const Variable<T>& node, std::optional<Variable<T>> parent)
+		Variable<T>& node, std::optional<Variable<T>> parent)
 	{
 		visitedNodes.emplace(node);
-		for (const Variable<T>& neighbor : reducedGraph[node])
+		for (Variable<T>& neighbor : reducedGraph.at(node))
 		{
 			if (!visitedNodes.count(neighbor))
 			{
-				if (__isCyclicGraph<T>(reducedGraph, neighbor, node))
+				if (__isCyclicGraph<T>(reducedGraph, visitedNodes, neighbor, node))
 				{
 					return true;
 				}
@@ -78,11 +78,11 @@ namespace csp
 		}
 
 		std::unordered_set<Ref<Variable<T>>> reducedGraphVars;
-		for (auto& varToNeighbors : reducedGraph)
+		// std::unordered_map<Ref<Variable<T>>, std::vector<Ref<Variable<T>>>>;
+		for (std::pair<const Ref<Variable<T>>, std::vector<Ref<Variable<T>>>>& varToNeighbors : reducedGraph)
 		{
 			reducedGraphVars.emplace(varToNeighbors.first);
-			const std::vector<Ref<Variable<T>>>& neighbors = varToNeighbors.second;
-			reducedGraph.insert(neighbors.cbegin(), neighbors.cend());
+			reducedGraphVars.insert(varToNeighbors.second.begin(), varToNeighbors.second.end());
 		}
 
 		bool isConnected = visitedNodes.size() == reducedGraphVars.size();
@@ -124,7 +124,7 @@ namespace csp
 		for (const std::vector<T>& assignmentValues : domainsProduct)
 		{
 			std::vector<std::pair<Ref<Variable<T>>, T>> vecVarToValue;
-			std::transform(std::execution::par_unseq, cutSetVars.cbegin(), cutSetVars.cend(), assignmentValues.cbegin(), 
+			std::transform(cutSetVars.cbegin(), cutSetVars.cend(), assignmentValues.cbegin(), 
 				std::back_inserter(vecVarToValue), [](const Ref<Variable<T>>& var, PassType<T> value) -> std::pair<Ref<Variable<T>>, T>
 				{
 					return std::make_pair(var, value);
@@ -196,18 +196,18 @@ namespace csp
 
 			ConstraintGraph<T> reducedGraph;
 			reducedGraph.reserve(variables.size());
-			for (const auto& varToNeighbors : constraintGraph)
+			for (auto& varToNeighbors : constraintGraph)
 			{
 				Variable<T>& var = varToNeighbors.first;
 				if (!cutSetVars.count(var))
 				{
 					reducedGraph.try_emplace(var, std::vector<Ref<Variable<T>>>{});
-					reducedGraph[var].reserve(constraintGraph.at(var).size());
+					reducedGraph.at(var).reserve(constraintGraph.at(var).size());
 					for (Variable<T>& neighbor : varToNeighbors.second)
 					{
 						if (!cutSetVars.count(neighbor))
 						{
-							reducedGraph[var].emplace_back(neighbor);
+							reducedGraph.at(var).emplace_back(neighbor);
 						}
 					}
 				}

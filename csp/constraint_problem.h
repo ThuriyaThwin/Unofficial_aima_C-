@@ -481,7 +481,6 @@ namespace csp
 			}
 		}
 
-		// CSPDO: write test
 		void assignVarsWithRandomValues(std::optional<std::unordered_set<Ref<Variable<T>>>> optReadOnlyVars =
 			std::optional<std::unordered_set<Ref<Variable<T>>>>{},
 			std::optional<AssignmentHistory<T>> optAssignmentHistory = std::optional<AssignmentHistory<T>>{}) noexcept
@@ -542,6 +541,28 @@ namespace csp
 			std::ostringstream outStringStream;
 			outStringStream << *this;
 			return outStringStream.str();
+		}
+
+		bool writeNameToAssignment(std::ostream& outStream)
+		{
+			bool successfulyWrittenAssignmentToOutStream = false;
+			if (m_umapNameToVariableRef.empty())
+			{
+				return successfulyWrittenAssignmentToOutStream;
+			}
+
+			static std::string SEP = " : ";
+			for (const std::pair<std::string, Ref<Variable<T>>>& nameToVar : m_umapNameToVariableRef)
+			{
+				const std::string& name = nameToVar.first;
+				const Variable<T>& var = nameToVar.second;
+				outStream << name << SEP;
+				var.writeAssignmentToOutStream(outStream);
+				outStream << '\n';
+			}
+
+			successfulyWrittenAssignmentToOutStream = true;
+			return successfulyWrittenAssignmentToOutStream;
 		}
 
 		friend bool operator==(const ConstraintProblem<T>& left, const ConstraintProblem<T>& right) noexcept

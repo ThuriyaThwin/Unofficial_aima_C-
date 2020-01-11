@@ -7,12 +7,13 @@
 namespace csp
 {
 	template <typename T>
-	static const std::vector<Ref<Variable<T>>> __kahnTopologicalSort(ConstraintProblem<T>& constraintProblem)
-	{
-		using DirectedGraph = std::unordered_map<Ref<Variable<T>>, std::unordered_set<Ref<Variable<T>>>>;
-		DirectedGraph directedGraph;
-		const std::vector<Ref<Variable<T>>> unassignedVariables = constraintProblem.getUnassignedVariables();
+	using DirectedGraph = std::unordered_map<Ref<Variable<T>>, std::unordered_set<Ref<Variable<T>>>>;
 
+	template <typename T>
+	static DirectedGraph<T> __init_directed_graph(ConstraintProblem<T>& constraintProblem, 
+		const std::vector<Ref<Variable<T>>>& unassignedVariables)
+	{
+		DirectedGraph<T> directedGraph;
 		for (Variable<T>& var : unassignedVariables)
 		{
 			for (Variable<T>& neighbor : constraintProblem.getUnassignedNeighbors(var))
@@ -25,7 +26,14 @@ namespace csp
 				}
 			}
 		}
+		
+		return directedGraph;
+	}
 
+	template <typename T>
+	std::unordered_map<Ref<Variable<T>>, size_t> __init_inDegree(DirectedGraph<T>& directedGraph, 
+		const std::vector<Ref<Variable<T>>>& unassignedVariables)
+	{
 		std::unordered_map<Ref<Variable<T>>, size_t> inDegree;
 		for (Variable<T>& var : unassignedVariables)
 		{
@@ -35,7 +43,13 @@ namespace csp
 				++inDegree[neighbor];
 			}
 		}
+		
+		return inDegree;
+	}
 
+	template <typename T>
+	std::unordered_set<Ref<Variable<T>>> init_zero_in_degree_vars(const std::unordered_map<Ref<Variable<T>>, size_t>& inDegree)
+	{
 		std::unordered_set<Ref<Variable<T>>> zeroInDegreeVars;
 		zeroInDegreeVars.reserve(inDegree.size() >> 2);
 		for (const std::pair<Ref<Variable<T>>, size_t>& varToInDegree : inDegree)
@@ -45,6 +59,17 @@ namespace csp
 				zeroInDegreeVars.emplace(varToInDegree.first);
 			}
 		}
+
+		return zeroInDegreeVars;
+	}
+
+	template <typename T>
+	static const std::vector<Ref<Variable<T>>> __kahnTopologicalSort(ConstraintProblem<T>& constraintProblem)
+	{
+		const std::vector<Ref<Variable<T>>> unassignedVariables = constraintProblem.getUnassignedVariables();
+		DirectedGraph<T> directedGraph = __init_directed_graph<T>(constraintProblem, unassignedVariables);
+		std::unordered_map<Ref<Variable<T>>, size_t> inDegree = __init_inDegree<T>(directedGraph, unassignedVariables);
+		std::unordered_set<Ref<Variable<T>>> zeroInDegreeVars = init_zero_in_degree_vars<T>(inDegree);
 
 		std::vector<Ref<Variable<T>>> topologicalySortedUnassginedVars;
 		topologicalySortedUnassginedVars.reserve(unassignedVariables.size());
@@ -116,7 +141,7 @@ namespace csp
 			{
 				return assignmentHistory;
 			}
-			T value = consistentDomain.back();
+			PassType<T> value = consistentDomain.back();
 			var.assignByValue(value);
 			if (writeAssignmentHistory)
 			{
